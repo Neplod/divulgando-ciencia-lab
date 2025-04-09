@@ -1,0 +1,12 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import Hora from "../components/Hora.astro";
+import { clientTranslations } from '../i18n';
+const lang = Astro.locals.lang;
+const t = clientTranslations[lang];
+---
+<MainLayout title="Reloj" class="h-screen" reloj="none">
+    <main class="h-full w-full text-[4rem] sm:text-[6rem] md:text-[10rem] lg:text-[16rem] xl:text-[23rem] sm:my-72 md:my-64 lg:my-28 xl:my-16 align-center flex justify-center items-center text-principal-black dark:text-principal-white">
+        <Hora class="h-screen w-full"/>
+    </main>
+</MainLayout>

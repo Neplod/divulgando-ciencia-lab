@@ -1,0 +1,12 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import CardSection from "../components/home/CardSection2.astro";
+import { clientTranslations } from '../i18n';
+const lang = Astro.locals.lang;
+const t = clientTranslations[lang];
+
+---
+
+<MainLayout title={t.titles.tools} class="mt-20 bg-dark-biology">
+    <CardSection />
+</MainLayout>

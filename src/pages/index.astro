@@ -1,16 +1,17 @@
 ---
-
+import MainLayout from '../layouts/MainLayout.astro';
+import HeroSection from '../components/home/HeroSection.astro';
+import CommunitySection from '../components/home/CommunitySection.astro';
+import PScript from '../components/home/ParticlesScript.astro'
+import CardSection from '../components/home/CardSection.astro';
+import { clientTranslations } from '../i18n';
+const lang = Astro.locals.lang;
+const t = clientTranslations[lang];
 ---
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<script defer src="/src/scripts/mdotnet.js"></script>
-	<title>-</title>
-</head>
-<body style="overflow-y: hidden; overflow-x: hidden;">
-	<canvas></canvas>
-</body>
-</html>
+<MainLayout title={t.titles.home}>
+    <PScript/>
+    <HeroSection />
+    <CardSection />
+    <CommunitySection />
+</MainLayout>

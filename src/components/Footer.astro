@@ -1,0 +1,26 @@
+---
+import { clientTranslations } from '../i18n';
+const lang = Astro.locals.lang;
+const t = clientTranslations[lang];
+---
+
+<footer class="w-full py-6 md:py-0 relative z-10 bg-background shadow-[0_-20px_15px_-20px] shadow-[#000]/50 dark:shadow-[0_-20px_18px_-20px] dark:shadow-[#000]/50">
+<div class="container flex flex-col md:flex-row justify-between items-center gap-4 md:h-24">
+    <div class="flex items-center gap-2">
+        <a href="/">
+            <div class="flex items-center gap-2">
+                <img src="/images/logo.webp" alt="Logo de divulgandociencia.com" class="h-5 w-5 rounded-md"/>
+                <span class="font-semibold">Divulgando Ciencia</span>
+            </div>
+        </a>
+    </div>
+    <div class="flex items-center gap-4 text-sm text-muted-foreground">
+        <a href="/terms" class="hover:underline underline-offset-4">{t.footer.terms}</a>
+        <a href="/contact" class="hover:underline underline-offset-4">{t.footer.contact}</a>
+    </div>
+    <div class="text-sm text-muted-foreground">
+        © Divulgando Ciencia. <a style="font-size:0.75rem" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
+    </div>
+</div>
+</footer>
+

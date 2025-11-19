@@ -1,0 +1,67 @@
+---
+import Layout from "./Layout.astro";
+const {
+    title,
+    description = "Realiza experimentos científicos increíbles desde tu navegador",
+    is404 = false,
+} = Astro.props;
+---
+
+<Layout title={title} description={description} is404={is404}>
+    <div class="top-0 items-center relative min-w-full w-full flex pt-8 px-10">
+        <div class="">
+            <a href="/">
+                <div
+                    class="rounded-full border-2 border-secondary-foreground/90 p-3 bg-secondary-foreground/10 animate-bounce-in shadow-xl shadow-black/20 hover:shadow-3xl transition-all hover:scale-110 cursor-pointer"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="h-6 w-6"
+                        ><path d="M9 14 4 9l5-5"></path><path
+                            d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"
+                        ></path></svg
+                    >
+                </div>
+            </a>
+        </div>
+        <div
+            class="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 rounded-full border-2 border-primary shadow-xl hover:shadow-2xl transition-all hover:scale-110 animate-bounce-in mx-auto"
+        >
+            <img
+                src="/images/logo-modo-claro.webp"
+                alt="Logo Divulgando Ciencia Lab"
+                class="w-8 h-8 rounded-full object-cover"
+            />
+
+            <span
+                class="font-black text-primary text-base uppercase tracking-wider"
+                >Divulgando Ciencia Lab</span
+            >
+        </div>
+    </div>
+    <slot />
+    <div
+        class="pt-16 grid grid-cols-1 md:grid-cols-3 gap-4 items-center text-sm text-muted-foreground font-medium px-16 pb-6"
+    >
+        <div class="hidden md:block"></div>
+        <div class="text-center">
+            <a href="/terms" class="hover:text-primary transition-colors"
+                >Términos y Condiciones</a
+            >
+        </div>
+        <div class="text-center md:text-right">
+            © Divulgando Ciencia. <a
+                href="https://creativecommons.org/licenses/by-nc/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-primary transition-colors">CC BY-NC 4.0</a
+            >
+        </div>
+    </div>
+</Layout>

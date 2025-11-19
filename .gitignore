@@ -26,3 +26,5 @@ pnpm-debug.log*
 compose.yaml
 Dockerfile
 output.txt
+
+package-lock.json

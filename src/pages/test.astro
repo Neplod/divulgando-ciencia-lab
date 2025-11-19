@@ -1,0 +1,105 @@
+---
+import MainLayout from "@/layouts/ToolLayout.astro";
+---
+<MainLayout>
+    <div class="h-full w-full">
+        <canvas id="canvas" class="w-full h-full bg-principal-black "></canvas>
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas') as any;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Nodos de ejemplo
+        let nodes = [
+            { id: 1, x: 100, y: 100, w: 120, h: 50, text: "Inicio" },
+            { id: 2, x: 400, y: 200, w: 120, h: 50, text: "Proceso" },
+            { id: 3, x: 700, y: 100, w: 120, h: 50, text: "Fin" }
+        ];
+        
+        // Conexiones
+        let links = [
+            { from: 1, to: 2 },
+            { from: 2, to: 3 }
+        ];
+        
+        let draggingNode = null;
+        let offsetX = 0;
+        let offsetY = 0;
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibujar conexiones
+            links.forEach(link => {
+                const from = nodes.find(n => n.id === link.from);
+                const to = nodes.find(n => n.id === link.to);
+                if (from && to) {
+                    ctx.strokeStyle = "#888";
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(from.x + from.w/2, from.y + from.h/2);
+                    ctx.lineTo(to.x + to.w/2, to.y + to.h/2);
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+            });
+        
+            // Dibujar nodos
+            nodes.forEach(node => {
+                ctx.beginPath();
+                ctx.fillStyle = "#2c2c2c";
+                ctx.strokeStyle = "#00d1ff";
+                ctx.lineWidth = 3;
+                ctx.roundRect(node.x, node.y, node.w, node.h, 40);
+                ctx.fill();
+                ctx.stroke();
+                ctx.font = "16px sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(node.text, node.x + node.w/2, node.y + node.h/2);
+                ctx.closePath();
+            });
+        }
+        
+        function getNodeAt(x, y) {
+            return nodes.find(node =>
+                x >= node.x && x <= node.x + node.w &&
+                y >= node.y && y <= node.y + node.h
+            );
+        }
+        
+        // Eventos(
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const node = getNodeAt(x, y);
+            if (node) {
+                canvas.style.cursor = "move";
+                draggingNode = node;
+                offsetX = x - node.x;
+                offsetY = y - node.y;
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (draggingNode) {
+                const rect = canvas.getBoundingClientRect();
+                draggingNode.x = e.clientX - rect.left - offsetX;
+                draggingNode.y = e.clientY - rect.top - offsetY;
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', (e) => {
+            canvas.style.cursor = "default";
+            draggingNode = null;
+        });
+        
+        // Redibuja continuamente
+        draw();
+    </script>
+</MainLayout>

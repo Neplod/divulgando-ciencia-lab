@@ -1,0 +1,327 @@
+---
+import Layout from "../layouts/ToolLayout.astro";
+---
+
+<Layout title="Consola Python">
+    <div class="min-h-screen py-12 px-4">
+        <div class="container mx-auto max-w-7xl">
+            <!-- Header -->
+            <div class="text-center mb-8 animate-fade-in">
+                <h1
+                    class="text-5xl md:text-6xl font-black text-foreground mb-4"
+                >
+                    Consola <span class="text-primary">Python</span>
+                </h1>
+                <p class="text-xl text-foreground/80">
+                    Ejecuta código Python directamente en tu navegador
+                </p>
+            </div>
+
+            <!-- Console Container -->
+            <div class="grid lg:grid-cols-2 gap-6 animate-slide-up">
+                <!-- Code Editor -->
+                <div
+                    class="bg-background/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-foreground/10 overflow-hidden"
+                >
+                    <div
+                        class="bg-foreground/5 px-6 py-4 border-b-4 border-foreground/10 flex items-center justify-between"
+                    >
+                        <h2 class="text-xl font-bold text-foreground">
+                            Editor de Código
+                        </h2>
+                        <button
+                            id="runButton"
+                            class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-xl font-bold transition-all hover:scale-105 hover:shadow-xl"
+                        >
+                            ▶ Ejecutar
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <textarea
+                            id="codeEditor"
+                            class="w-full h-96 bg-foreground/5 text-foreground font-mono text-sm p-4 rounded-xl border-2 border-foreground/10 focus:border-accent focus:outline-none resize-none"
+                            placeholder="# Escribe tu código Python aquí
+print('¡Hola, mundo!')
+
+# Calcula el área de un círculo
+radio = 5
+area = 3.14159 * radio ** 2
+print(f'Área del círculo: {area}')"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <!-- Console Output -->
+                <div
+                    class="bg-background/80 backdrop-blur-sm rounded-2xl shadow-2xl border-4 border-foreground/10 overflow-hidden flex flex-col"
+                >
+                    <div
+                        class="bg-foreground/5 px-6 py-4 border-b-4 border-foreground/10 flex items-center justify-between"
+                    >
+                        <h2 class="text-xl font-bold text-foreground">
+                            Consola
+                        </h2>
+                        <button
+                            id="clearButton"
+                            class="bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-xl font-bold transition-all hover:scale-105"
+                        >
+                            Limpiar
+                        </button>
+                    </div>
+                    <div class="flex-1 p-6 overflow-y-auto">
+                        <div
+                            id="consoleOutput"
+                            class="font-mono text-sm space-y-2 min-h-96 max-h-96 overflow-y-auto whitespace-pre-wrap wrap-break-words"
+                        >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="text-center mt-8">
+                <div
+                    class="inline-flex items-center gap-3 bg-background/80 backdrop-blur-sm px-6 py-3 rounded-xl border-2 border-foreground/10"
+                >
+                    <div
+                        class="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"
+                    >
+                    </div>
+                    <span id="loadingText" class="text-foreground font-semibold"
+                        >Cargando Python...</span
+                    >
+                </div>
+            </div>
+
+            <!-- Examples -->
+            <div class="mt-12 animate-fade-in">
+                <h3 class="text-2xl font-bold text-foreground mb-6 text-center">
+                    Ejemplos de Código
+                </h3>
+                <div class="grid md:grid-cols-3 gap-4">
+                    <button
+                        class="example-btn bg-background/80 backdrop-blur-sm p-4 rounded-xl border-2 border-foreground/10 hover:border-primary hover:shadow-xl transition-all text-left group"
+                    >
+                        <h4
+                            class="font-bold text-foreground mb-2 group-hover:text-primary transition-colors"
+                        >
+                            Hola Mundo
+                        </h4>
+                        <code class="text-xs text-foreground/60 font-mono"
+                            >print('¡Hola, mundo!')</code
+                        >
+                    </button>
+                    <button
+                        class="example-btn bg-background/80 backdrop-blur-sm p-4 rounded-xl border-2 border-foreground/10 hover:border-secondary hover:shadow-xl transition-all text-left group"
+                    >
+                        <h4
+                            class="font-bold text-foreground mb-2 group-hover:text-secondary transition-colors"
+                        >
+                            Matemáticas
+                        </h4>
+                        <code class="text-xs text-foreground/60 font-mono"
+                            >for i in range(1, 11):<br />&nbsp;&nbsp;print(f'{
+                                `{i} x 5 = {i*5}`
+                            }')</code
+                        >
+                    </button>
+                    <button
+                        class="example-btn bg-background/80 backdrop-blur-sm p-4 rounded-xl border-2 border-foreground/10 hover:border-accent hover:shadow-xl transition-all text-left group"
+                    >
+                        <h4
+                            class="font-bold text-foreground mb-2 group-hover:text-accent transition-colors"
+                        >
+                            Listas
+                        </h4>
+                        <code class="text-xs text-foreground/60 font-mono"
+                            >frutas = ['manzana', 'banana', 'naranja']<br />for
+                            fruta in frutas:<br />&nbsp;&nbsp;print(f'Me gusta
+                            la {`{fruta}`}')</code
+                        >
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</Layout>
+
+<script type="module">
+    window.screwdriver.log("Iniciando carga de consola Python");
+
+    let pyodide = null;
+
+    const loadingIndicator = document.getElementById("loadingIndicator");
+    const loadingText = document.getElementById("loadingText");
+    const consoleOutput = document.getElementById("consoleOutput");
+    const codeEditor = document.getElementById("codeEditor");
+    const runButton = document.getElementById("runButton");
+    const clearButton = document.getElementById("clearButton");
+
+    async function initPyodide() {
+        try {
+            window.screwdriver.log(
+                "Verificando disponibilidad de loadPyodide...",
+            );
+
+            if (typeof window.loadPyodide === "undefined") {
+                throw new Error(
+                    "loadPyodide no está disponible. Verifica la conexión a internet.",
+                );
+            }
+
+            loadingText.textContent =
+                "Descargando Python (puede tardar 10-30 segundos)...";
+            window.screwdriver.log("Iniciando descarga de Pyodide...");
+
+            pyodide = await globalThis.loadPyodide();
+
+            window.screwdriver.log("Pyodide cargado correctamente");
+
+            loadingIndicator.classList.add("hidden");
+
+            addOutput(
+                "✓ Python cargado correctamente. ¡Listo para ejecutar código!",
+                "success",
+            );
+        } catch (error) {
+            window.screwdriver.log("Error al cargar Python: " + error, "error");
+            loadingIndicator.classList.add("hidden");
+            addOutput(`❌ Error al cargar Python: ${error.message}`, "error");
+            addOutput(
+                "Intenta recargar la página o verifica tu conexión a internet.",
+                "error",
+            );
+        }
+    }
+
+    function addOutput(text, type = "output") {
+        const line = document.createElement("div");
+        line.className = "animate-fade-in";
+
+        const colors = {
+            output: "text-foreground",
+            error: "text-primary",
+            success: "text-success",
+        };
+
+        line.className += ` ${colors[type] || colors.output}`;
+        line.textContent = text;
+        consoleOutput.appendChild(line);
+        consoleOutput.scrollTop = consoleOutput.scrollHeight;
+    }
+    class StdinHandler {
+        constructor(results, options) {
+            this.results = results || [];
+            this.idx = 0;
+            Object.assign(this, options);
+        }
+        stdin() {
+            if (this.idx >= this.results.length) return "";
+            return this.results[this.idx++];
+        }
+    }
+    async function runCode() {
+        if (!pyodide) {
+            addOutput(
+                "❌ Python aún no está cargado. Por favor espera...",
+                "error",
+            );
+            return;
+        }
+
+        const code = codeEditor.value.trim();
+        if (!code) {
+            addOutput("❌ Por favor escribe algo de código primero.", "error");
+            return;
+        }
+
+        addOutput("─".repeat(50), "output");
+        runButton.textContent = "⏸ Ejecutando...";
+        runButton.disabled = true;
+
+        try {
+            window.screwdriver.log("Ejecutando código Python...");
+            pyodide.setStdin(new StdinHandler(["a", "b", "c"]));
+
+            const result = await pyodide.runPythonAsync(`
+import sys
+from io import StringIO
+
+old_stdout = sys.stdout
+old_stderr = sys.stderr
+sys.stdout = StringIO()
+sys.stderr = StringIO()
+
+try:
+    exec("""${code.replace(/"/g, '\\"').replace(/\n/g, "\\n")}""")
+    output = sys.stdout.getvalue()
+    errors = sys.stderr.getvalue()
+finally:
+    sys.stdout = old_stdout
+    sys.stderr = old_stderr
+
+(output, errors)
+            `);
+
+            const [stdout, stderr] = result.toJs();
+
+            if (stdout) {
+                stdout.split("\n").forEach((line) => {
+                    if (line) addOutput(line, "output");
+                });
+            }
+
+            if (stderr) {
+                stderr.split("\n").forEach((line) => {
+                    if (line) addOutput(line, "error");
+                });
+            }
+
+            if (!stdout && !stderr) {
+                addOutput("✓ Código ejecutado sin salida", "success");
+            }
+
+            window.screwdriver.log("Código ejecutado correctamente");
+        } catch (error) {
+            window.screwdriver.log(
+                "Error al ejecutar código: " + error,
+                "error",
+            );
+            addOutput(`❌ Error: ${error.message}`, "error");
+        } finally {
+            runButton.textContent = "▶ Ejecutar";
+            runButton.disabled = false;
+        }
+    }
+
+    // Event listeners
+    runButton.addEventListener("click", runCode);
+    clearButton.addEventListener("click", () => {
+        consoleOutput.innerHTML = "";
+        addOutput("✓ Consola limpiada", "success");
+    });
+
+    const examples = [
+        "print('¡Hola, mundo!')",
+        "for i in range(1, 11):\n    print(f'{i} x 5 = {i*5}')",
+        "frutas = ['manzana', 'banana', 'naranja']\nfor fruta in frutas:\n    print(f'Me gusta la {fruta}')",
+    ];
+
+    document.querySelectorAll(".example-btn").forEach((btn, index) => {
+        btn.addEventListener("click", () => {
+            codeEditor.value = examples[index];
+        });
+    });
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+            window.screwdriver.log("DOM listo, iniciando carga de Pyodide");
+            setTimeout(initPyodide, 100);
+        });
+    } else {
+        window.screwdriver.log("DOM ya listo, iniciando carga de Pyodide");
+        setTimeout(initPyodide, 100);
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>

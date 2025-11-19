@@ -1,0 +1,54 @@
+---
+const {
+    title,
+    description = "Realiza experimentos científicos increíbles desde tu navegador",
+    is404 = false,
+} = Astro.props;
+import "../styles/global.css";
+import Seo from "../components/Seo.astro";
+---
+
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <Seo
+            title={(title ? title + " | " : "") + "Divulgando Ciencia Lab"}
+            description={description}
+            image=""
+            altIMG=""
+            lang="es"
+            robots={is404}
+        />
+        <link rel="icon" type="image/svg+xml" href="/images/logo.webp" />
+        <script src="https://unpkg.com/function-plot/dist/function-plot.js"
+        ></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=General+Sans:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <script>
+            declare global {
+                interface Window {
+                    screwdriver: {
+                        log: (message: string, type?: string) => void;
+                    };
+                }
+            }
+            const printer = (message: string, type = "log") => {
+                (console as any)[type](
+                    `%cScrewDriver`,
+                    "background: linear-gradient(90deg, #31E87D 0%, #8DF04F 100%); color: white; padding-inline: 4px; border-radius: 2px; font-family: monospace;",
+                    message,
+                );
+            };
+            window.screwdriver = window.screwdriver || {};
+            window.screwdriver.log = printer;
+        </script>
+    </head>
+</html><body class="w-full select-none">
+    <slot />
+</body>

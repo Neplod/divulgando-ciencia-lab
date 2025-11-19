@@ -1,39 +1,186 @@
 ---
-import MainLayout from '../layouts/MainLayout.astro';
-import Icon from "../components/ui/Icons.astro";
-import Button from '../components/ui/Button.astro';
-import { clientTranslations } from '../i18n';
-const lang = Astro.locals.lang;
-const t = clientTranslations[lang];
+import MainLayout from "../layouts/Layout.astro";
+import { clientTranslations } from "../i18n";
+const t = clientTranslations["es"];
 ---
+
 <MainLayout title={t.titles.terms}>
-    <div class="relative flex flex-col h-full bg-background text-foreground px-16 py-4">
-        <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-4">{t.terms.title}</h1>
-        <p class="text-muted-foreground pb-2">
-            {t.terms.date}
-        </p>
-        <p>{t.terms.subtitle}</p>
-        <h2 class="text-2xl font-bold my-3">{t.terms.paragraph1.title}</h2>
-        <p>
-            <strong>{t.terms.paragraph1.p1}</strong> Darío Otero {t.common.and} Dorian Ruiz
-        </p>
-        <p>
-            <strong>{t.terms.paragraph1.p2}</strong> <a href="mailto:support@divulgandociencia.com">support@divulgandociencia.com</a>
-        </p>
-        <p>
-            <strong>{t.terms.paragraph1.p3}</strong> {t.terms.paragraph1.p4}
-        </p>
-        <h2 class="text-2xl font-bold my-3">{t.terms.paragraph2.title}</h2>
-        <p>{t.terms.paragraph2.description}</p>
-        <h2 class="text-2xl font-bold my-3">{t.terms.paragraph3.title}</h2>
-        <p>{t.terms.paragraph3.description}</p>
-        <h2 class="text-2xl font-bold my-3">{t.terms.paragraph4.title}</h2>
-        <p>{t.terms.paragraph4.description}</p>
-        <h2 class="text-2xl font-bold my-3">{t.terms.paragraph5.title}</h2>
-        <p>{t.terms.paragraph5.description}</p>
-        <h2 class="text-2xl font-bold my-3">{t.terms.paragraph6.title}</h2>
-        <p>{t.terms.paragraph6.description}</p>
-        <h2 class="text-2xl font-bold my-3">{t.terms.paragraph7.title}</h2>
-        <p>{t.terms.paragraph7.description}</p/>
+    <div class="top-0 items-center relative min-w-full w-full flex pt-8 px-10">
+        <div class="">
+            <a href="/">
+                <div
+                    class="rounded-full border-2 border-secondary-foreground/90 p-3 bg-secondary-foreground/10 animate-bounce-in shadow-xl shadow-black/20 hover:shadow-3xl transition-all hover:scale-110 cursor-pointer"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="h-6 w-6"
+                        ><path d="M9 14 4 9l5-5"></path><path
+                            d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"
+                        ></path></svg
+                    >
+                </div>
+            </a>
+        </div>
+        <div
+            class="inline-flex items-center gap-2 px-6 py-3 bg-primary/10 rounded-full border-2 border-primary shadow-xl hover:shadow-2xl transition-all hover:scale-110 animate-bounce-in mx-auto"
+        >
+            <img
+                src="/images/logo-modo-claro.webp"
+                alt="Logo Divulgando Ciencia Lab"
+                class="w-8 h-8 rounded-full object-cover"
+            />
+
+            <span
+                class="font-black text-primary text-base uppercase tracking-wider"
+                >Divulgando Ciencia Lab</span
+            >
+        </div>
     </div>
-    </MainLayout>
+    <div class="container mx-auto max-w-4xl py-12 px-4 animate-slide-up">
+        <div class="space-y-2 mb-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-black text-primary">
+                {t.terms.title}
+            </h1>
+            <p class="text-muted-foreground font-medium">
+                {t.terms.date}
+            </p>
+        </div>
+
+        <div
+            class="prose prose-invert max-w-none space-y-8 text-foreground/80 leading-relaxed"
+        >
+            <p class="text-lg font-medium text-foreground">
+                {t.terms.subtitle}
+            </p>
+
+            <section>
+                <h2
+                    class="text-2xl font-bold text-foreground mb-4 flex items-center gap-2"
+                >
+                    <span class="w-2 h-8 bg-primary rounded-full"></span>
+                    {t.terms.paragraph1.title}
+                </h2>
+                <div class="space-y-4 pl-4 border-l-2 border-primary/10">
+                    <p>
+                        <strong class="text-foreground"
+                            >{t.terms.paragraph1.p1}</strong
+                        > Darío Otero {t.common.and} Dorian Ruiz
+                    </p>
+                    <p>
+                        <strong class="text-foreground"
+                            >{t.terms.paragraph1.p2}</strong
+                        >
+                        <a
+                            href="mailto:support@divulgandociencia.com"
+                            class="text-primary hover:text-primary/80 underline decoration-primary/30 underline-offset-4 transition-colors"
+                        >
+                            support@divulgandociencia.com
+                        </a>
+                    </p>
+                    <p>
+                        <strong class="text-foreground"
+                            >{t.terms.paragraph1.p3}</strong
+                        >
+                        {t.terms.paragraph1.p4}
+                    </p>
+                </div>
+            </section>
+
+            <section>
+                <h2
+                    class="text-2xl font-bold text-foreground mb-4 flex items-center gap-2"
+                >
+                    <span class="w-2 h-8 bg-accent rounded-full"></span>
+                    {t.terms.paragraph2.title}
+                </h2>
+                <p class="pl-4 border-l-2 border-accent/10">
+                    {t.terms.paragraph2.description}
+                </p>
+            </section>
+
+            <section>
+                <h2
+                    class="text-2xl font-bold text-foreground mb-4 flex items-center gap-2"
+                >
+                    <span class="w-2 h-8 bg-secondary rounded-full"></span>
+                    {t.terms.paragraph3.title}
+                </h2>
+                <p class="pl-4 border-l-2 border-secondary/10">
+                    {t.terms.paragraph3.description}
+                </p>
+            </section>
+
+            <section>
+                <h2
+                    class="text-2xl font-bold text-foreground mb-4 flex items-center gap-2"
+                >
+                    <span class="w-2 h-8 bg-success rounded-full"></span>
+                    {t.terms.paragraph4.title}
+                </h2>
+                <p class="pl-4 border-l-2 border-success/10">
+                    {t.terms.paragraph4.description}
+                </p>
+            </section>
+
+            <section>
+                <h2
+                    class="text-2xl font-bold text-foreground mb-4 flex items-center gap-2"
+                >
+                    <span class="w-2 h-8 bg-primary rounded-full"></span>
+                    {t.terms.paragraph5.title}
+                </h2>
+                <p class="pl-4 border-l-2 border-primary/10">
+                    {t.terms.paragraph5.description}
+                </p>
+            </section>
+
+            <section>
+                <h2
+                    class="text-2xl font-bold text-foreground mb-4 flex items-center gap-2"
+                >
+                    <span class="w-2 h-8 bg-accent rounded-full"></span>
+                    {t.terms.paragraph6.title}
+                </h2>
+                <p class="pl-4 border-l-2 border-accent/10">
+                    {t.terms.paragraph6.description}
+                </p>
+            </section>
+
+            <section>
+                <h2
+                    class="text-2xl font-bold text-foreground mb-4 flex items-center gap-2"
+                >
+                    <span class="w-2 h-8 bg-secondary rounded-full"></span>
+                    {t.terms.paragraph7.title}
+                </h2>
+                <p class="pl-4 border-l-2 border-secondary/10">
+                    {t.terms.paragraph7.description}
+                </p>
+            </section>
+        </div>
+    </div>
+    <div
+        class="pb-6 mx-10 grid grid-cols-1 md:grid-cols-3 gap-4 items-center text-sm text-muted-foreground font-medium"
+    >
+        <div class="hidden md:block"></div>
+        <div class="text-center">
+            <a href="/terms" class="hover:text-primary transition-colors"
+                >Términos y Condiciones</a
+            >
+        </div>
+        <div class="text-center md:text-right">
+            © Divulgando Ciencia. <a
+                href="https://creativecommons.org/licenses/by-nc/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-primary transition-colors">CC BY-NC 4.0</a
+            >
+        </div>
+    </div>
+</MainLayout>

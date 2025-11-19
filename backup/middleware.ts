@@ -1,6 +1,6 @@
 // src/middleware.ts
 import { defineMiddleware } from 'astro/middleware';
-import { languages } from './i18n/index';
+import { languages } from '../src/i18n/index';
 
 const onRequest = defineMiddleware(async (context, next) => {
     let lang = 'es';

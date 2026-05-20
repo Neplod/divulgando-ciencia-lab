@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../../tailwind.config.cjs";
 
 /* Definiendo variables de color correctamente */
 :root {

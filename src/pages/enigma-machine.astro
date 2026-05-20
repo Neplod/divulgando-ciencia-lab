@@ -1,0 +1,1748 @@
+---
+import Layout from "../layouts/ToolLayout.astro";
+---
+
+<Layout title="Máquina Enigma" description="Simulador interactivo de la Máquina Enigma de la Segunda Guerra Mundial. Configura rotores, tablero de conexiones, visualiza la ruta de la señal y analiza frecuencias y tiempos en tiempo real.">
+    <style is:global>
+        .metal-panel {
+            background: linear-gradient(145deg, #1f1f23, #151518);
+            box-shadow:
+                inset 1px 1px 0px rgba(255, 255, 255, 0.05),
+                inset -1px -1px 0px rgba(0, 0, 0, 0.4),
+                0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .rotor-window {
+            background: linear-gradient(to bottom, #0f0f11, #1e1e24, #0f0f11);
+            box-shadow:
+                inset 0 2px 8px rgba(0, 0, 0, 0.8),
+                0 1px 0px rgba(255, 255, 255, 0.05);
+        }
+        .glow-lamp {
+            transition: all 0.15s ease-in-out;
+        }
+        .glow-lamp.active {
+            background: radial-gradient(
+                circle,
+                #ff9d00 20%,
+                #ff5d00 70%,
+                #852100 100%
+            );
+            color: #ffffff !important;
+            border-color: #ffaa44;
+            box-shadow:
+                0 0 20px rgba(255, 93, 0, 0.8),
+                inset 0 1px 3px rgba(255, 255, 255, 0.4);
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+        }
+        .keyboard-key {
+            box-shadow:
+                0 4px 0px #18181b,
+                0 6px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.05s ease;
+        }
+        .keyboard-key:active,
+        .keyboard-key.active {
+            transform: translateY(3px);
+            box-shadow:
+                0 1px 0px #18181b,
+                0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .plugboard-socket::after {
+            content: "";
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #09090b;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+        .plugboard-socket.active {
+            border-color: var(--color-accent, #4650ff);
+            box-shadow: 0 0 12px var(--color-accent, #4650ff);
+        }
+        .plugboard-socket.connected {
+            border-color: var(--color-success, #00d084);
+            box-shadow: 0 0 8px rgba(0, 208, 132, 0.4);
+        }
+        .scrolling-digits {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: rgba(255, 20, 30, 0.3);
+            border-radius: 3px;
+        }
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 20, 30, 0.5);
+        }
+    </style>
+
+    <div id="loading-overlay" class="fixed inset-0 bg-zinc-950/95 backdrop-blur-md flex flex-col items-center justify-center z-50 transition-all duration-500">
+        <div class="relative w-28 h-28 flex items-center justify-center">
+            <div class="absolute inset-0 border-4 border-dashed border-amber-500 rounded-full animate-[spin_10s_linear_infinite] opacity-60"></div>
+            <div class="absolute inset-3 border-4 border-double border-primary rounded-full animate-[spin_5s_linear_infinite] [animation-direction:reverse] opacity-70"></div>
+            <svg class="w-12 h-12 text-amber-500 animate-pulse" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+        </div>
+        <p class="mt-6 text-amber-500 font-sans font-bold text-sm tracking-widest uppercase">
+            Divulgando Ciencia Lab
+        </p>
+        <p id="loading-status" class="mt-2 text-zinc-400 font-mono text-xs">
+            Cargando Pyodide WASM (Entorno Python)...
+        </p>
+    </div>
+
+    <section class="mt-6 w-full justify-center text-center m-auto px-4 sm:px-8 text-foreground">
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20 mb-3">
+            <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+            <span class="text-xs font-semibold text-primary uppercase tracking-wider">Criptografía Histórica</span>
+        </div>
+        <h1 class="font-sans font-extrabold text-4xl sm:text-5xl lg:text-6xl tracking-tight mb-3">Máquina Enigma</h1>
+        <p class="text-sm sm:text-base max-w-2xl mx-auto text-muted-foreground">
+            Explora el funcionamiento de la legendaria máquina de cifrado de la
+            Segunda Guerra Mundial. Configura sus rotores, el panel de
+            conexiones, escribe mensajes y analiza la señal eléctrica paso a
+            paso.
+        </p>
+    </section>
+
+    <main id="enigma-dashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 opacity-0 transition-opacity duration-700 pointer-events-none grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
+            <div class="metal-panel rounded-3xl p-6 border border-zinc-800 flex flex-col gap-8 relative">
+                <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+                    <span class="font-sans font-bold text-xs tracking-wider text-zinc-500 uppercase">ENIGMA M3 SIMULATION - Python</span>
+                    <div class="flex gap-2">
+                        <span class="w-3 h-3 rounded-full bg-zinc-800 border border-zinc-700 shadow-inner"></span>
+                        <span class="w-3 h-3 rounded-full bg-zinc-800 border border-zinc-700 shadow-inner"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 1. Rotores (Mecánica de Sustitución)
+                    </h3>
+                    <div class="grid grid-cols-3 gap-4 md:gap-8 bg-zinc-950/60 p-4 md:p-6 rounded-2xl border border-zinc-900 shadow-inner">
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="text-[10px] font-bold text-zinc-500 tracking-wider">IZQUIERDA (R3)</span>
+                            <select id="rotor-select-0" class="w-full text-center bg-zinc-900 border border-zinc-800 rounded-md text-xs font-mono py-1 text-zinc-300 focus:outline-none focus:border-amber-500 transition-colors">
+                                <option value="0" selected>Rotor I</option>
+                                <option value="1">Rotor II</option>
+                                <option value="2">Rotor III</option>
+                                <option value="3">Rotor IV</option>
+                                <option value="4">Rotor V</option>
+                            </select>
+
+                            <div class="flex items-center gap-1.5 mt-2">
+                                <button class="rotor-btn-prev text-zinc-500 hover:text-amber-500 focus:outline-none transition-colors p-1" data-rotor="0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+                                </button>
+
+                                <div class="rotor-window w-10 h-16 rounded-md border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+                                    <div class="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_4px_6px_rgba(0,0,0,0.6),inset_0_-4px_6px_rgba(0,0,0,0.6)]"></div>
+                                    <div class="absolute w-full h-8 border-y border-amber-500/20 bg-amber-500/5 top-4 pointer-events-none"></div>
+                                    <div id="rotor-scroll-0" class="scrolling-digits font-mono font-bold text-base text-zinc-400" style="transform: translateY(0px);"></div>
+                                </div>
+
+                                <button class="rotor-btn-next text-zinc-500 hover:text-amber-500 focus:outline-none transition-colors p-1" data-rotor="0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="text-[10px] font-bold text-zinc-500 tracking-wider">MEDIO (R2)</span>
+                            <select id="rotor-select-1" class="w-full text-center bg-zinc-900 border border-zinc-800 rounded-md text-xs font-mono py-1 text-zinc-300 focus:outline-none focus:border-amber-500 transition-colors">
+                                <option value="0">Rotor I</option>
+                                <option value="1" selected>Rotor II</option>
+                                <option value="2">Rotor III</option>
+                                <option value="3">Rotor IV</option>
+                                <option value="4">Rotor V</option>
+                            </select>
+                            <div class="flex items-center gap-1.5 mt-2">
+                                <button class="rotor-btn-prev text-zinc-500 hover:text-amber-500 focus:outline-none transition-colors p-1" data-rotor="1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+                                </button>
+
+                                <div class="rotor-window w-10 h-16 rounded-md border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+                                    <div class="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_4px_6px_rgba(0,0,0,0.6),inset_0_-4px_6px_rgba(0,0,0,0.6)]"></div>
+                                    <div class="absolute w-full h-8 border-y border-amber-500/20 bg-amber-500/5 top-4 pointer-events-none"></div>
+                                    <div id="rotor-scroll-1" class="scrolling-digits font-mono font-bold text-base text-zinc-400" style="transform: translateY(0px);"></div>
+                                </div>
+
+                                <button class="rotor-btn-next text-zinc-500 hover:text-amber-500 focus:outline-none transition-colors p-1" data-rotor="1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center gap-2">
+                            <span class="text-[10px] font-bold text-zinc-500 tracking-wider">DERECHA (R1)</span>
+                            <select id="rotor-select-2" class="w-full text-center bg-zinc-900 border border-zinc-800 rounded-md text-xs font-mono py-1 text-zinc-300 focus:outline-none focus:border-amber-500 transition-colors">
+                                <option value="0">Rotor I</option>
+                                <option value="1">Rotor II</option>
+                                <option value="2" selected>Rotor III</option>
+                                <option value="3">Rotor IV</option>
+                                <option value="4">Rotor V</option>
+                            </select>
+
+                            <div class="flex items-center gap-1.5 mt-2">
+                                <button class="rotor-btn-prev text-zinc-500 hover:text-amber-500 focus:outline-none transition-colors p-1" data-rotor="2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+                                </button>
+
+                                <div class="rotor-window w-10 h-16 rounded-md border border-zinc-800 flex items-center justify-center overflow-hidden relative">
+                                    <div class="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_4px_6px_rgba(0,0,0,0.6),inset_0_-4px_6px_rgba(0,0,0,0.6)]"></div>
+                                    <div class="absolute w-full h-8 border-y border-amber-500/20 bg-amber-500/5 top-4 pointer-events-none"></div>
+                                    <div id="rotor-scroll-2" class="scrolling-digits font-mono font-bold text-base text-zinc-400" style="transform: translateY(0px);"></div>
+                                </div>
+
+                                <button class="rotor-btn-next text-zinc-500 hover:text-amber-500 focus:outline-none transition-colors p-1" data-rotor="2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 2. Lampboard (Panel de Luces)
+                    </h3>
+                    <div class="bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-900/60 shadow-inner flex flex-col gap-3 justify-center items-center select-none">
+                        <div class="flex gap-2 justify-center w-full">
+                            {
+                                ["Q","W","E","R","T","Z","U","I","O",].map((letter) => (
+                                    <div class="glow-lamp w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center font-mono font-extrabold text-sm sm:text-base text-zinc-600 shadow-md" data-lamp={letter}>
+                                        {letter}
+                                    </div>
+                                ))
+                            }
+                        </div>
+                        <div class="flex gap-2 justify-center w-full">
+                            {
+                                ["A", "S", "D", "F", "G", "H", "J", "K"].map(
+                                    (letter) => (
+                                        <div class="glow-lamp w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center font-mono font-extrabold text-sm sm:text-base text-zinc-600 shadow-md" data-lamp={letter}>
+                                            {letter}
+                                        </div>
+                                    ),
+                                )
+                            }
+                        </div>
+                        <div class="flex gap-2 justify-center w-full">
+                            {
+                                ["P","Y","X","C","V","B","N","M","L",].map((letter) => (
+                                    <div class="glow-lamp w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border border-zinc-800 bg-zinc-900 flex items-center justify-center font-mono font-extrabold text-sm sm:text-base text-zinc-600 shadow-md" data-lamp={letter}>
+                                        {letter}
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 3. Teclado Físico / Virtual
+                    </h3>
+                    <div class="bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-900/60 shadow-inner flex flex-col gap-3 justify-center items-center">
+                        <div class="flex gap-2 justify-center w-full">
+                            {
+                                ["Q","W","E","R","T","Z","U","I","O",].map((letter) => (
+                                    <button class="keyboard-key w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-2 border-zinc-800 bg-linear-to-b from-zinc-700 to-zinc-900 hover:from-zinc-600 hover:to-zinc-800 active:scale-95 text-sm sm:text-base text-zinc-200 font-mono font-bold flex items-center justify-center cursor-pointer select-none" data-key={letter}>
+                                        {letter}
+                                    </button>
+                                ))
+                            }
+                        </div>
+                        <div class="flex gap-2 justify-center w-full">
+                            {
+                                ["A", "S", "D", "F", "G", "H", "J", "K"].map(
+                                    (letter) => (
+                                        <button class="keyboard-key w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-2 border-zinc-800 bg-linear-to-b from-zinc-700 to-zinc-900 hover:from-zinc-600 hover:to-zinc-800 active:scale-95 text-sm sm:text-base text-zinc-200 font-mono font-bold flex items-center justify-center cursor-pointer select-none" data-key={letter}>
+                                            {letter}
+                                        </button>
+                                    ),
+                                )
+                            }
+                        </div>
+                        <div class="flex gap-2 justify-center w-full font-mono">
+                            {
+                                ["P","Y","X","C","V","B","N","M","L"].map((letter) => (
+                                    <button class="keyboard-key w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full border-2 border-zinc-800 bg-linear-to-b from-zinc-700 to-zinc-900 hover:from-zinc-600 hover:to-zinc-800 active:scale-95 text-sm sm:text-base text-zinc-200 font-mono font-bold flex items-center justify-center cursor-pointer select-none" data-key={letter}>
+                                        {letter}
+                                    </button>
+                                ))
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xs font-semibold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 4. Plugboard (Tablero de Enchufes)
+                        </h3>
+                        <button id="btn-clear-plugs" class="text-[10px] font-sans px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded border border-zinc-700 transition-colors uppercase cursor-pointer">Quitar Todos</button>
+                    </div>
+                    <div id="plugboard-container" class="bg-zinc-950 p-4 md:p-6 rounded-2xl border border-zinc-900/60 shadow-inner flex flex-col gap-4 justify-center items-center relative select-none">
+                        <svg id="plugboard-svg" class="absolute inset-0 w-full h-full pointer-events-none z-20"></svg>
+                        <div class="flex gap-2.5 justify-center w-full relative z-10">
+                            {
+                                ["Q","W","E","R","T","Z","U","I","O"].map((letter) => (
+                                    <div class="flex flex-col items-center gap-1">
+                                        <span class="text-[10px] font-bold text-zinc-500">{letter}</span>
+                                        <button class="plugboard-socket w-6 h-6 rounded-full border-2 border-zinc-700 bg-zinc-950 flex items-center justify-center cursor-pointer relative" data-plug={letter}></button>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                        <div class="flex gap-2.5 justify-center w-full relative z-10">
+                            {
+                                ["A", "S", "D", "F", "G", "H", "J", "K"].map(
+                                    (letter) => (
+                                        <div class="flex flex-col items-center gap-1">
+                                            <span class="text-[10px] font-bold text-zinc-500">{letter}</span>
+                                            <button class="plugboard-socket w-6 h-6 rounded-full border-2 border-zinc-700 bg-zinc-950 flex items-center justify-center cursor-pointer relative" data-plug={letter}></button>
+                                        </div>
+                                    ),
+                                )
+                            }
+                        </div>
+                        <div class="flex gap-2.5 justify-center w-full relative z-10">
+                            {
+                                ["P","Y","X","C","V","B","N","M","L"].map((letter) => (
+                                    <div class="flex flex-col items-center gap-1">
+                                        <span class="text-[10px] font-bold text-zinc-500">{letter}</span>
+                                        <button class="plugboard-socket w-6 h-6 rounded-full border-2 border-zinc-700 bg-zinc-950 flex items-center justify-center cursor-pointer relative" data-plug={letter}></button>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-zinc-500 mt-2 text-center">
+                        Haz clic en una letra y luego en otra para conectarlas.
+                        Haz clic en un jack conectado para eliminar su cable.
+                        Máximo 13 conexiones.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
+            <div class="bg-card text-card-foreground p-5 rounded-2xl border border-border shadow-sm flex flex-col gap-4">
+                <h3 class="text-sm font-semibold tracking-wide flex items-center gap-2 border-b border-border pb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Consola de Mensajes
+                </h3>
+                <div class="flex flex-col gap-1.5">
+                    <label for="input-text" class="text-xs font-medium text-muted-foreground">Texto en Claro (A-Z)</label>
+                    <textarea id="input-text" rows="3" placeholder="Escribe aquí tu mensaje (solo letras sin acentos)..." class="w-full bg-input text-foreground border border-input rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary scrollbar-custom uppercase" style="resize: none;"></textarea>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label for="output-text" class="text-xs font-medium text-muted-foreground">Texto Encriptado / Cifrado</label>
+                    <textarea id="output-text" rows="3" readonly placeholder="El resultado aparecerá aquí..." class="w-full bg-zinc-950 border border-zinc-900 text-amber-500 font-mono rounded-lg p-3 text-sm focus:outline-none scrollbar-custom" style="resize: none;"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button id="btn-run-all" class="col-span-2 py-2.5 bg-primary hover:bg-primary/95 text-primary-foreground font-sans font-semibold rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Cifrar / Descifrar Bloque
+                    </button>
+                    <button id="btn-reset-rotors" class="py-2.5 bg-secondary/20 hover:bg-secondary/30 text-secondary-foreground font-sans font-semibold rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Reset Rotores
+                    </button>
+                    <button id="btn-copy" class="py-2.5 bg-accent/10 hover:bg-accent/20 text-shop-black font-sans font-semibold rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>Copiar Cifrado
+                    </button>
+                    <button id="btn-clear-console" class="col-span-2 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-sans rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>Limpiar Consola y Gráficos
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-card text-card-foreground p-5 rounded-2xl border border-border shadow-sm flex flex-col gap-4">
+                <div class="flex justify-between items-center border-b border-border pb-2">
+                    <h3 class="text-sm font-semibold tracking-wide flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>Trazador de Señal
+                    </h3>
+                    <span id="trace-char-indicator" class="text-xs font-mono bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">NINGUNO</span>
+                </div>
+
+                <div id="signal-trace-container" class="flex flex-col gap-3 font-mono text-xs text-muted-foreground relative">
+                    <div class="absolute left-2.75 top-3 bottom-3 w-0.5 bg-zinc-800"></div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span id="trace-step-in" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-zinc-500 font-sans">1. Entrada Teclado</span>
+                            <span id="trace-label-in" class="text-foreground">-</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span id="trace-step-pb1" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-zinc-500 font-sans">2. Clavijero (Ida)</span>
+                            <span id="trace-label-pb1" class="text-foreground">-</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span id="trace-step-rot-f" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-zinc-500 font-sans">3. Rotores (Ida: R1 → R2 → R3)</span>
+                            <span id="trace-label-rot-f" class="text-foreground">-</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span id="trace-step-refl" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-zinc-500 font-sans">4. Reflector (Swapper)</span>
+                            <span id="trace-label-refl" class="text-foreground">-</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span id="trace-step-rot-b" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-zinc-500 font-sans">5. Rotores (Vuelta: R3 → R2 → R1)</span>
+                            <span id="trace-label-rot-b" class="text-foreground">-</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span id="trace-step-pb2" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-zinc-500 font-sans">6. Clavijero (Vuelta)</span>
+                            <span id="trace-label-pb2" class="text-foreground">-</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 relative z-10">
+                        <span id="trace-step-out" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-zinc-500 font-sans">7. Salida (Lampboard)</span>
+                            <span id="trace-label-out" class="text-foreground">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        <div class="bg-card text-card-foreground border border-border rounded-3xl p-6 shadow-sm">
+            <div class="flex border-b border-border overflow-x-auto scrollbar-custom gap-2 mb-6">
+                <button class="tab-btn py-3 px-5 text-sm font-semibold border-b-2 border-primary text-primary transition-colors focus:outline-none whitespace-nowrap cursor-pointer" data-tab="tab-analytics">Estadísticas Científicas</button>
+                <button class="tab-btn py-3 px-5 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors focus:outline-none whitespace-nowrap cursor-pointer" data-tab="tab-config">Configuración de Cables y Rotores</button>
+                <button class="tab-btn py-3 px-5 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors focus:outline-none whitespace-nowrap cursor-pointer" data-tab="tab-history">Historial de Ejecución</button>
+            </div>
+            <div id="tab-analytics" class="tab-content block">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-sm font-bold text-foreground">Análisis de Frecuencia de Letras</h4>
+                            <span class="text-[10px] text-muted-foreground font-sans">Compara Entrada vs. Cifrado</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            Enigma tiene la particularidad matemática de que <span class="text-primary font-bold">ninguna letra se encripta a sí misma</span>. Además, la frecuencia típica del lenguaje (curva desigual con picos) se difunde a una distribución más plana.
+                        </p>
+
+                        <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-900 shadow-inner h-60 w-full mt-2 relative">
+                            <svg id="frequency-svg" class="w-full h-full" viewBox="0 0 520 200" preserveAspectRatio="none"></svg>
+                        </div>
+                        <div class="flex justify-center gap-6 mt-1 text-[10px] font-medium font-sans">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-primary/70 border border-primary rounded-sm"></span>
+                                <span class="text-muted-foreground">Texto Original</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-accent/70 border border-accent rounded-sm"></span>
+                                <span class="text-muted-foreground">Texto Cifrado</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="text-sm font-bold text-foreground">Rendimiento: Tiempos de Ejecución (µs)</h4>
+                            <span id="avg-time-indicator" class="text-[10px] bg-accent/10 text-shop-black px-2 py-0.5 rounded font-mono font-bold">Promedio: 0 µs</span>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            Muestra los microsegundos (µs) tomados por Pyodide en WebAssembly para cifrar cada letra. Útil para verificar la consistencia del rendimiento de cómputo en WASM.
+                        </p>
+
+                        <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-900 shadow-inner h-60 w-full mt-2 relative">
+                            <svg id="speed-svg" class="w-full h-full" viewBox="0 0 500 200" preserveAspectRatio="none"></svg>
+                        </div>
+                        <p class="text-[10px] text-zinc-500 text-center mt-1">
+                            Eje horizontal: Posición del carácter en el texto • Eje vertical: Tiempo de cifrado (µs)
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-config" class="tab-content hidden">
+                <div class="flex flex-col gap-6">
+                    <h4 class="text-sm font-bold text-foreground">
+                        Mapa Interno de la Configuración Activa
+                    </h4>
+                    <p class="text-xs text-muted-foreground">
+                        A continuación se detallan las conexiones e intercambios
+                        eléctricos que componen tu clave actual. Los rotores son
+                        inicializados de forma aleatoria al cargar el simulador.
+                    </p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-900 shadow-inner flex flex-col gap-4 font-mono text-xs">
+                            <h5 class="text-xs font-bold text-amber-500 border-b border-zinc-800 pb-1.5">
+                                Matriz de Cables de Rotores
+                            </h5>
+
+                            <div class="flex flex-col gap-3">
+                                <div>
+                                    <div class="text-[10px] text-zinc-500 font-bold mb-1">
+                                        ROTOR I WIRING:
+                                    </div>
+                                    <div id="cfg-rot-0" class="text-zinc-300 break-all select-all font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-900/80">
+                                        Cargando...
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-500 font-bold mb-1">
+                                        ROTOR II WIRING:
+                                    </div>
+                                    <div id="cfg-rot-1" class="text-zinc-300 break-all select-all font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-900/80">
+                                        Cargando...
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-500 font-bold mb-1">
+                                        ROTOR III WIRING:
+                                    </div>
+                                    <div id="cfg-rot-2" class="text-zinc-300 break-all select-all font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-900/80">
+                                        Cargando...
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-500 font-bold mb-1">
+                                        ROTOR IV WIRING:
+                                    </div>
+                                    <div id="cfg-rot-3" class="text-zinc-300 break-all select-all font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-900/80">
+                                        Cargando...
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-500 font-bold mb-1">
+                                        ROTOR V WIRING:
+                                    </div>
+                                    <div id="cfg-rot-4" class="text-zinc-300 break-all select-all font-mono leading-relaxed bg-zinc-900/50 p-2 rounded border border-zinc-900/80">
+                                        Cargando...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-900 shadow-inner flex flex-col gap-4 font-mono text-xs">
+                            <h5 class="text-xs font-bold text-amber-500 border-b border-zinc-800 pb-1.5">
+                                Matriz de Cables de Reflector y Clavijero
+                            </h5>
+
+                            <div class="flex flex-col gap-4">
+                                <div>
+                                    <div class="text-[10px] text-zinc-500 font-bold mb-1">
+                                        REFLECTOR MAPPING:
+                                    </div>
+                                    <div id="cfg-reflector" class="text-zinc-300 break-all select-all bg-zinc-900/50 p-2 rounded border border-zinc-900/80 leading-relaxed">
+                                        Cargando...
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-500 font-bold mb-1">
+                                        CLAVIJERO (CONEXIONES EN EL PLUGBOARD):
+                                    </div>
+                                    <div id="cfg-plugboard" class="text-zinc-300 break-all bg-zinc-900/50 p-2 rounded border border-zinc-900/80 leading-relaxed min-h-16">
+                                        Ningún cable conectado. Haz conexiones en el tablero de arriba.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-history" class="tab-content hidden">
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-bold text-foreground">
+                            Historial de Mensajes
+                        </h4>
+                        <button id="btn-clear-history" class="text-xs px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded border border-zinc-700 transition-colors cursor-pointer">
+                            Borrar Historial
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto scrollbar-custom border border-border rounded-xl">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-muted text-muted-foreground font-medium uppercase text-[10px] tracking-wider border-b border-border">
+                                    <th class="py-3 px-4">Hora</th>
+                                    <th class="py-3 px-4">Rotores Activos</th>
+                                    <th class="py-3 px-4">Posición Inicial</th>
+                                    <th class="py-3 px-4">Clavijas (Plugboard)</th>
+                                    <th class="py-3 px-4">Entrada</th>
+                                    <th class="py-3 px-4">Cifrado</th>
+                                    <th class="py-3 px-4 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body" class="divide-y divide-border">
+                                <tr>
+                                    <td colspan="7" class="py-6 text-center text-muted-foreground font-sans">
+                                        No hay ejecuciones registradas. ¡Prueba encriptando un mensaje!
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script is:inline>
+        let pyodide = null;
+        let enigmaJS = null;
+
+        let currentRotors = [0, 1, 2];
+        let rotorPositions = [0, 0, 0];
+        let plugboardPairs = [];
+        let activePlugSocket = null;
+        let executionTimes = [];
+        let historyData = [];
+
+        const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        const QWERTZ_FLAT = ["Q","W","E","R","T","Z","U","I","O","A","S","D","F","G","H","J","K","P","Y","X","C","V","B","N","M","L"];
+
+        const WIRE_COLORS = [
+            "#ff141e", // Primary Red
+            "#4650ff", // Accent Blue
+            "#00d084", // Success Green
+            "#ffff14", // Secondary Yellow
+            "#f43f5e", // Rose
+            "#a855f7", // Purple
+            "#3b82f6", // Blue
+            "#ec4899", // Pink
+            "#f97316", // Orange
+            "#14b8a6", // Teal
+            "#84cc16", // Lime
+            "#06b6d4", // Cyan
+        ];
+
+        function initRotorScrolls() {
+            for (let i = 0; i < 3; i++) {
+                updateRotorScrollDisplay(i);
+            }
+        }
+
+        function updateRotorScrollDisplay(rotorIdx) {
+            const container = document.getElementById(
+                `rotor-scroll-${rotorIdx}`,
+            );
+            if (!container) return;
+
+            const pos = rotorPositions[rotorIdx];
+
+            let lettersHTML = "";
+            for (let offset = -2; offset <= 2; offset++) {
+                const charIdx = (pos + offset + 26) % 26;
+                const letter = ALPHABET[charIdx];
+                const isCurrent = offset === 0;
+
+                lettersHTML += `<span class="h-8 flex items-center justify-center transition-all duration-150 ${isCurrent ? "text-amber-500 font-extrabold text-lg" : "text-zinc-600 opacity-40 text-xs"}">${letter}</span>`;
+            }
+
+            container.innerHTML = lettersHTML;
+        }
+
+        async function initEnigma() {
+            const statusEl = document.getElementById("loading-status");
+            try {
+                if (typeof globalThis.loadPyodide === "undefined") {
+                    throw new Error(
+                        "loadPyodide no está disponible. Revisa tu conexión a internet.",
+                    );
+                }
+
+                statusEl.innerText = "Inicializando WebAssembly...";
+                pyodide = pyodide || (await globalThis.loadPyodide());
+
+                statusEl.innerText = "Compilando lógica Enigma en Python...";
+                const pythonCode = `
+import random
+
+LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+
+def charToPosition(char: str)->int:
+    if len(char) != 1: raise ValueError("Character must be a single letter")
+    if char.lower() not in LETTERS: raise ValueError("Character must be a letter")
+    return LETTERS.index(char.lower())
+
+def positionToChar(position: int)->str:
+    if position < 0 or position >= 26: raise ValueError("Position must be between 0 and 25")
+    return LETTERS[position]
+
+def length(): return len(LETTERS)
+
+def checkMapping(mapping: list[int])->bool: 
+    return len(mapping) == length() and len(set(mapping)) == length()
+
+def rotate(positions:list[int], times:int=1)->list[int]:
+    if times <= 0: return positions
+    if times > len(positions): return rotate(positions, times % len(positions))
+    if times == len(positions): return positions
+    return positions[times:] + positions[:times]
+
+def checkListUnique(list:list)->bool: return len(set(list)) == len(list)
+
+def checkListPermutation(list:list, domain:list[int]=None)->bool:
+    if domain is None: domain = range(len(list))
+    elif not checkListUnique(domain): raise ValueError("Domain must be unique")
+    return checkListUnique(list) and all(i in list for i in domain)
+
+def generateRandomPairList(size:int=26)->list[int]:
+    letters = list(range(size))
+    random.shuffle(letters)
+    reflector = [0] * size
+    while letters:
+        a = letters.pop()
+        if letters:
+            b = letters.pop()
+            reflector[a] = b
+            reflector[b] = a
+        else:
+            # Imposible con 26 (par), pero por seguridad
+            reflector[a] = a
+    return reflector
+
+class BaseSwapper:
+    def swap(self, positions: list[int], letter: int)->int:
+        if not checkListPermutation(positions, range(len(positions))): raise ValueError("Positions must be a permutation of 0-25")
+        return positions[letter]
+    def inverseSwap(self, positions: list[int], letter: int)->int:
+        if not checkListPermutation(positions, range(len(positions))): raise ValueError("Positions must be a permutation of 0-25")
+        return positions.index(letter)
+
+class Swapper(BaseSwapper):
+    def __init__(self, positions:list[int]=None):
+        super().__init__()
+        self.__positions = positions if positions else [i for i in range(26)]
+    def swap(self, letter: int, positions:list[int]=None)->int: 
+        return super().swap(self.__positions if positions is None else positions, letter)
+    def inverseSwap(self, letter: int, positions:list[int]=None)->int: 
+        return super().inverseSwap(self.__positions if positions is None else positions, letter)
+    def mix(self): random.shuffle(self.__positions)
+    def unmix(self): self.__positions = [i for i in range(26)]
+    @property
+    def positions(self)->list[int]: return self.__positions
+    @positions.setter
+    def positions(self, positions:list[int]):
+        if not checkListPermutation(positions, range(26)): raise ValueError("Positions must be a permutation of 0-25")
+        self.__positions = positions
+
+class Rotor(Swapper):
+    def __init__(self, position: int=0):
+        super().__init__()
+        self.position = position
+    def swap(self, letter: int): return super().swap(letter, rotate(self.positions, self.position))
+    def inverseSwap(self, letter: int): return super().inverseSwap(letter, rotate(self.positions, self.position))
+    def rotate(self):
+        self.position += 1
+        if self.position >= len(self.positions): self.position = 0
+    def unrotate(self):
+        self.position -= 1
+        if self.position < 0: self.position = len(self.positions) - 1
+    def reset(self): self.position = 0
+
+class RotorsGroup:
+    def __init__(self, rotors: list[Rotor]): self.rotors = rotors
+    def swap(self, letter: int):
+        for rotor in self.rotors: letter = rotor.swap(letter)
+        return letter
+    def inverseSwap(self, letter: int):
+        for rotor in reversed(self.rotors): letter = rotor.inverseSwap(letter)
+        return letter
+    def rotate(self):
+        for rotor in self.rotors:
+            rotor.rotate()
+            if rotor.position != 0: break
+    def reset(self): [rotor.reset() for rotor in self.rotors]
+
+class PlugBoard(Swapper):
+    def __init__(self, mapping: list[int]=None):
+        if mapping is None: mapping = [i for i in range(26)]
+        super().__init__(mapping)
+    def reMap(self, mapping: list[int]):
+        if not checkMapping(mapping): raise ValueError("Mapping must be of length 26")
+        self.positions = mapping
+    def swapPins(self, a: int, b: int):
+        if a == b: raise ValueError("Cannot swap a pin with itself")
+        if self.positions[a] == b and self.positions[b] == a: return
+        if a != self.positions[a] or b != self.positions[b]: raise ValueError("Cannot swap a pin that is already swapped")
+        temp = self.positions[a]
+        self.positions[a] = self.positions[b]
+        self.positions[b] = temp
+    def unswapPin(self, pin: int):
+        if self.positions[pin] == pin: return
+        temp = self.positions[pin]
+        self.positions[pin] = pin
+        self.positions[temp] = temp
+    def reset(self): self.positions = [i for i in range(26)]
+
+class EnigmaMachine:
+    def __init__(self):
+        self.plugboard = PlugBoard()
+        self.rotors = [Rotor(0) for _ in range(5)]
+        self.reflector = Swapper()
+        # Inicializar rotores de forma consistente, pero aleatoria por sesión
+        for r in self.rotors: r.mix()
+        self.reflector.positions = generateRandomPairList()
+        self.rotorGroup = RotorsGroup(self.rotors[:3])
+        
+    def selectRotors(self, rotors: list[int]):
+        if len(rotors) != 3: raise ValueError("Select 3 rotors")
+        if not checkListUnique(rotors): raise ValueError("Rotor indices must be unique")
+        if not all(0 <= i <= 4 for i in rotors): raise ValueError("Rotor indices must be in range 0-4")
+        self.rotorGroup = RotorsGroup([self.rotors[i] for i in rotors])
+        
+    def loadPositions(self, positions: list[int]):
+        if len(positions) != 3: raise ValueError("Select 3 positions")
+        if not all(0 <= p <= 25 for p in positions): raise ValueError("Positions must be in range 0-25")
+        for r, p in zip(self.rotorGroup.rotors, positions): r.position = p
+        
+    def loadPins(self, pins: list[list[int,int]]):
+        _pins = [p for pair in pins for p in pair]
+        if not checkListPermutation(_pins, range(26)): raise ValueError("Pins must be a permutation of 0-25")
+        for p in pins: self.plugboard.swapPins(p[0], p[1])
+        
+    def step(self, letter:str)->str:
+        letter = charToPosition(letter)
+        self.rotorGroup.rotate()
+        letter = self.plugboard.swap(letter)
+        letter = self.rotorGroup.swap(letter)
+        letter = self.reflector.swap(letter)
+        letter = self.rotorGroup.inverseSwap(letter)
+        letter = self.plugboard.swap(letter)
+        return positionToChar(letter)
+        
+    def run(self, message:str)->str: 
+        return ''.join([self.step(c) for c in message])
+        
+    def reset(self):
+        self.plugboard.reset()
+        for r in self.rotors: r.reset()
+        
+    def step_trace(self, letter:str)->dict:
+        rotors_before = [r.position for r in self.rotorGroup.rotors]
+        self.rotorGroup.rotate()
+        rotors_after = [r.position for r in self.rotorGroup.rotors]
+        char_in = letter.lower()
+        pos_in = charToPosition(char_in)
+        pos_pb1 = self.plugboard.swap(pos_in)
+        char_pb1 = positionToChar(pos_pb1)
+        pos_r = pos_pb1
+        rotor_steps_forward = []
+        for rotor in self.rotorGroup.rotors:
+            pos_r = rotor.swap(pos_r)
+            rotor_steps_forward.append(positionToChar(pos_r))
+        pos_refl = self.reflector.swap(pos_r)
+        char_refl = positionToChar(pos_refl)
+        pos_rinv = pos_refl
+        rotor_steps_backward = []
+        for rotor in reversed(self.rotorGroup.rotors):
+            pos_rinv = rotor.inverseSwap(pos_rinv)
+            rotor_steps_backward.append(positionToChar(pos_rinv))
+        pos_pb2 = self.plugboard.swap(pos_rinv)
+        char_out = positionToChar(pos_pb2)
+        return {
+            "rotors_before": rotors_before,
+            "rotors_after": rotors_after,
+            "input": char_in.upper(),
+            "plugboard_in": char_pb1.upper(),
+            "rotors_forward": [c.upper() for c in rotor_steps_forward],
+            "reflector": char_refl.upper(),
+            "rotors_backward": [c.upper() for c in rotor_steps_backward],
+            "plugboard_out": char_out.upper(),
+            "output": char_out.upper()
+        }
+
+machine = EnigmaMachine()
+`;
+                await pyodide.runPythonAsync(pythonCode);
+                enigmaJS = pyodide.globals.get("machine");
+
+                statusEl.innerText = "Configurando entorno de simulación...";
+
+                applyMachineConfigToPython();
+                renderMachineWiringDetails();
+                loadHistoryFromStorage();
+
+                const overlay = document.getElementById("loading-overlay");
+                const dashboard = document.getElementById("enigma-dashboard");
+
+                overlay.classList.add("opacity-0", "pointer-events-none");
+                setTimeout(() => {
+                    overlay.remove();
+                }, 500);
+
+                dashboard.classList.remove("opacity-0", "pointer-events-none");
+
+                window.screwdriver.log(
+                    "Pyodide y Enigma cargados correctamente.",
+                );
+
+                initRotorScrolls();
+
+                renderFrequencyChart();
+                renderSpeedChart();
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = `Error al cargar: ${err.message}`;
+                statusEl.classList.add("text-red-500");
+            }
+        }
+
+        function applyMachineConfigToPython() {
+            if (!enigmaJS) return;
+
+            enigmaJS.selectRotors(pyodide.toPy(currentRotors));
+
+            enigmaJS.loadPositions(pyodide.toPy(rotorPositions));
+            enigmaJS.plugboard.reset();
+            for (const pair of plugboardPairs) {
+                enigmaJS.plugboard.swapPins(pair[0], pair[1]);
+            }
+
+            updatePlugboardSocketsUI();
+            drawPlugboardWires();
+            updateConfigMappingText();
+        }
+
+        function renderMachineWiringDetails() {
+            if (!enigmaJS) return;
+
+            for (let i = 0; i < 5; i++) {
+                const rotor = enigmaJS.rotors.get(i);
+                const posList = rotor.positions.toJs();
+                let mapping = [];
+                for (let k = 0; k < 26; k++) {
+                    mapping.push(`${ALPHABET[k]}→${ALPHABET[posList[k]]}`);
+                }
+                const labelEl = document.getElementById(`cfg-rot-${i}`);
+                if (labelEl) {
+                    labelEl.innerText = mapping.join("  ");
+                }
+            }
+
+            const reflList = enigmaJS.reflector.positions.toJs();
+            let reflMapping = [];
+            for (let k = 0; k < 26; k++) {
+                reflMapping.push(`${ALPHABET[k]}⇄${ALPHABET[reflList[k]]}`);
+            }
+            const reflEl = document.getElementById("cfg-reflector");
+            if (reflEl) {
+                reflEl.innerText = reflMapping.join("  ");
+            }
+        }
+
+        function updateConfigMappingText() {
+            const pbEl = document.getElementById("cfg-plugboard");
+            if (!pbEl) return;
+
+            if (plugboardPairs.length === 0) {
+                pbEl.innerText =
+                    "Ningún cable conectado. Haz conexiones en el tablero superior.";
+                return;
+            }
+
+            const text = plugboardPairs
+                .map((pair) => `${ALPHABET[pair[0]]} ⇄ ${ALPHABET[pair[1]]}`)
+                .join(", ");
+            pbEl.innerText = `Conexiones activas (${plugboardPairs.length}/13): ${text}`;
+        }
+
+        function updatePlugboardSocketsUI() {
+            const sockets = document.querySelectorAll(".plugboard-socket");
+            sockets.forEach((sock) => {
+                const char = sock.getAttribute("data-plug");
+                const idx = ALPHABET.indexOf(char);
+
+                sock.classList.remove("active", "connected");
+
+                if (activePlugSocket === idx) {
+                    sock.classList.add("active");
+                }
+
+                const isConnected = plugboardPairs.some((pair) =>
+                    pair.includes(idx),
+                );
+                if (isConnected) {
+                    sock.classList.add("connected");
+                }
+            });
+        }
+
+        function drawPlugboardWires() {
+            const svg = document.getElementById("plugboard-svg");
+            const container = document.getElementById("plugboard-container");
+            if (!svg || !container) return;
+
+            svg.innerHTML = "";
+
+            const containerRect = container.getBoundingClientRect();
+
+            plugboardPairs.forEach((pair, index) => {
+                const charA = ALPHABET[pair[0]];
+                const charB = ALPHABET[pair[1]];
+
+                const socketA = document.querySelector(
+                    `.plugboard-socket[data-plug="${charA}"]`,
+                );
+                const socketB = document.querySelector(
+                    `.plugboard-socket[data-plug="${charB}"]`,
+                );
+
+                if (socketA && socketB) {
+                    const rA = socketA.getBoundingClientRect();
+                    const rB = socketB.getBoundingClientRect();
+
+                    const x1 = rA.left - containerRect.left + rA.width / 2;
+                    const y1 = rA.top - containerRect.top + rA.height / 2;
+                    const x2 = rB.left - containerRect.left + rB.width / 2;
+                    const y2 = rB.top - containerRect.top + rB.height / 2;
+                    const color = WIRE_COLORS[index % WIRE_COLORS.length];
+                    const controlOffset = Math.abs(x2 - x1) * 0.4 + 40;
+                    const cy1 = y1 + controlOffset;
+                    const cy2 = y2 + controlOffset;
+
+                    const path = document.createElementNS(
+                        "http://www.w3.org/2000/svg",
+                        "path",
+                    );
+                    path.setAttribute(
+                        "d",
+                        `M ${x1} ${y1} C ${x1} ${cy1}, ${x2} ${cy2}, ${x2} ${y2}`,
+                    );
+                    path.setAttribute("stroke", color);
+                    path.setAttribute("stroke-width", "3.5");
+                    path.setAttribute("fill", "none");
+                    path.setAttribute("stroke-linecap", "round");
+                    path.setAttribute("opacity", "0.8");
+                    path.setAttribute("class", "transition-all duration-300");
+
+                    svg.appendChild(path);
+                }
+            });
+        }
+
+        window.addEventListener("resize", () => {
+            if (enigmaJS) {
+                drawPlugboardWires();
+            }
+        });
+
+        function handlePlugboardClick(char) {
+            const idx = ALPHABET.indexOf(char);
+
+            const pairIndex = plugboardPairs.findIndex((pair) =>
+                pair.includes(idx),
+            );
+            if (pairIndex !== -1) {
+                plugboardPairs.splice(pairIndex, 1);
+                activePlugSocket = null;
+                applyMachineConfigToPython();
+                return;
+            }
+
+            if (activePlugSocket === null) {
+                activePlugSocket = idx;
+                updatePlugboardSocketsUI();
+            }
+            else {
+                const secondIdx = idx;
+                if (activePlugSocket === secondIdx) {
+                    activePlugSocket = null;
+                } else {
+                    plugboardPairs.push([activePlugSocket, secondIdx]);
+                    activePlugSocket = null;
+                }
+                applyMachineConfigToPython();
+            }
+        }
+
+        function encryptSingleChar(char) {
+            if (!enigmaJS) return;
+
+            const t0 = performance.now();
+
+            const pyTrace = enigmaJS.step_trace(char);
+            const t1 = performance.now();
+
+            const trace = pyTrace.toJs({ dict_converter: Object.fromEntries });
+
+            const duration = Math.round((t1 - t0) * 1000);
+            executionTimes.push(duration);
+
+            rotorPositions = Array.from(trace.rotors_after);
+
+            for (let i = 0; i < 3; i++) {
+                updateRotorScrollDisplay(i);
+            }
+
+            const outChar = trace.output;
+            const lamp = document.querySelector(
+                `.glow-lamp[data-lamp="${outChar}"]`,
+            );
+            if (lamp) {
+                lamp.classList.add("active");
+                setTimeout(() => {
+                    lamp.classList.remove("active");
+                }, 400);
+            }
+
+            const inputTxt = document.getElementById("input-text");
+            const outputTxt = document.getElementById("output-text");
+
+            inputTxt.value += char;
+            outputTxt.value += outChar;
+
+            renderTracePath(trace);
+            renderFrequencyChart();
+            renderSpeedChart();
+        }
+        function renderTracePath(trace) {
+            document.getElementById("trace-char-indicator").innerText =
+                `${trace.input} ➔ ${trace.output}`;
+
+            document.getElementById("trace-label-in").innerText =
+                `Entra letra '${trace.input}'`;
+
+            const pbInChanged = trace.input !== trace.plugboard_in;
+            document.getElementById("trace-label-pb1").innerText = pbInChanged
+                ? `Intercambio de clavijas: ${trace.input} ⇄ ${trace.plugboard_in}`
+                : `Sin cambios en clavijero (${trace.input})`;
+
+            const rotorsStr = currentRotors
+                .map((rNum, i) => {
+                    const beforeL = ALPHABET[trace.rotors_before[i]];
+                    const afterL = ALPHABET[trace.rotors_after[i]];
+                    return `R${rNum + 1}(${beforeL}→${afterL})`;
+                })
+                .join(", ");
+
+            const rFwd = trace.rotors_forward;
+            document.getElementById("trace-label-rot-f").innerText =
+                `Pasando de derecha a izquierda: ${trace.plugboard_in} ➔ [R1] ${rFwd[2]} ➔ [R2] ${rFwd[1]} ➔ [R3] ${rFwd[0]}`;
+            document.getElementById("trace-label-refl").innerText =
+                `Cruce simétrico: ${rFwd[0]} ⇄ ${trace.reflector}`;
+
+            const rBwd = trace.rotors_backward;
+            document.getElementById("trace-label-rot-b").innerText =
+                `Pasando de izquierda a derecha (inversos): ${trace.reflector} ➔ [R3-inv] ${rBwd[0]} ➔ [R2-inv] ${rBwd[1]} ➔ [R1-inv] ${rBwd[2]}`;
+
+            const pbOutChanged = rBwd[2] !== trace.plugboard_out;
+            document.getElementById("trace-label-pb2").innerText = pbOutChanged
+                ? `Intercambio de clavijas: ${rBwd[2]} ⇄ ${trace.plugboard_out}`
+                : `Sin cambios en clavijero (${rBwd[2]})`;
+            document.getElementById("trace-label-out").innerText =
+                `Se enciende bombilla '${trace.output}'`;
+
+            const stepEls = [
+                "trace-step-in",
+                "trace-step-pb1",
+                "trace-step-rot-f",
+                "trace-step-refl",
+                "trace-step-rot-b",
+                "trace-step-pb2",
+                "trace-step-out",
+            ];
+
+            const stepValues = [
+                trace.input,
+                trace.plugboard_in,
+                rFwd[2],
+                trace.reflector,
+                rBwd[0],
+                trace.plugboard_out,
+                trace.output,
+            ];
+
+            stepEls.forEach((id, i) => {
+                const el = document.getElementById(id);
+                el.innerText = stepValues[i];
+                el.classList.remove(
+                    "border-zinc-800",
+                    "text-zinc-500",
+                    "bg-zinc-950",
+                    "border-emerald-500",
+                    "text-emerald-500",
+                    "shadow-[0_0_8px_rgba(16,185,129,0.5)]",
+                );
+                el.classList.add(
+                    "border-emerald-500",
+                    "text-emerald-500",
+                    "shadow-[0_0_8px_rgba(16,185,129,0.5)]",
+                );
+            });
+        }
+
+        function encryptBulkBlock() {
+            if (!enigmaJS) return;
+            const inputVal = document
+                .getElementById("input-text")
+                .value.toUpperCase();
+
+            const filteredInput = inputVal
+                .split("")
+                .filter((char) => ALPHABET.includes(char))
+                .join("");
+
+            if (filteredInput.length === 0) {
+                alert("Por favor, introduce al menos una letra válida (A-Z).");
+                return;
+            }
+
+            const initialRotorPositions = [...rotorPositions];
+
+            let outputVal = "";
+            executionTimes = [];
+            let lastTrace = null;
+
+            filteredInput.split("").forEach((char) => {
+                const t0 = performance.now();
+                const pyTrace = enigmaJS.step_trace(char);
+                const t1 = performance.now();
+
+                const trace = pyTrace.toJs({
+                    dict_converter: Object.fromEntries,
+                });
+
+                const duration = Math.round((t1 - t0) * 1000);
+                executionTimes.push(duration);
+
+                outputVal += trace.output;
+                lastTrace = trace;
+
+                rotorPositions = Array.from(trace.rotors_after);
+            });
+
+            document.getElementById("output-text").value = outputVal;
+
+            for (let i = 0; i < 3; i++) {
+                updateRotorScrollDisplay(i);
+            }
+            if (lastTrace) {
+                renderTracePath(lastTrace);
+            }
+
+            saveRunToHistory(filteredInput, outputVal, initialRotorPositions);
+
+            renderFrequencyChart();
+            renderSpeedChart();
+        }
+
+        function saveRunToHistory(input, output, rotorPosStart) {
+            const date = new Date();
+            const formatTime = date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+            });
+
+            const rotorsStr = currentRotors
+                .map((idx) => {
+                    switch (idx) {
+                        case 0:
+                            return "I";
+                        case 1:
+                            return "II";
+                        case 2:
+                            return "III";
+                        case 3:
+                            return "IV";
+                        case 4:
+                            return "V";
+                    }
+                })
+                .join("-");
+
+            const posStr = rotorPosStart.map((pos) => ALPHABET[pos]).join("");
+
+            const plugsStr =
+                plugboardPairs.length > 0
+                    ? plugboardPairs
+                          .map(
+                              (pair) =>
+                                  `${ALPHABET[pair[0]]}${ALPHABET[pair[1]]}`,
+                          )
+                          .join(",")
+                    : "Ninguna";
+
+            const record = {
+                time: formatTime,
+                rotors: rotorsStr,
+                positions: posStr,
+                plugboard: plugsStr,
+                input:
+                    input.length > 15 ? input.substring(0, 12) + "..." : input,
+                output:
+                    output.length > 15
+                        ? output.substring(0, 12) + "..."
+                        : output,
+                fullInput: input,
+                fullOutput: output,
+                rotorIndices: [...currentRotors],
+                rotorPositions: [...rotorPosStart],
+                plugboardPairsRaw: JSON.parse(JSON.stringify(plugboardPairs)),
+            };
+
+            historyData.unshift(record);
+            if (historyData.length > 15) historyData.pop();
+
+            localStorage.setItem("enigma_history", JSON.stringify(historyData));
+            renderHistoryTable();
+        }
+        function loadHistoryFromStorage() {
+            const data = localStorage.getItem("enigma_history");
+            if (data) {
+                try {
+                    historyData = JSON.parse(data);
+                } catch (e) {
+                    historyData = [];
+                }
+            }
+            renderHistoryTable();
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById("history-table-body");
+            if (!tbody) return;
+
+            if (historyData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-6 text-center text-muted-foreground font-sans">
+                            No hay ejecuciones registradas. ¡Prueba encriptando un mensaje!
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = historyData
+                .map(
+                    (record, index) => `
+                <tr class="hover:bg-muted/50 transition-colors border-b border-border font-mono">
+                    <td class="py-3 px-4 text-zinc-400 font-sans">${record.time}</td>
+                    <td class="py-3 px-4 font-bold text-foreground">${record.rotors}</td>
+                    <td class="py-3 px-4 text-amber-500 font-bold">${record.positions}</td>
+                    <td class="py-3 px-4 text-zinc-400">${record.plugboard}</td>
+                    <td class="py-3 px-4 text-zinc-300 max-w-[100px] truncate" title="${record.fullInput}">${record.input}</td>
+                    <td class="py-3 px-4 text-amber-500 font-bold max-w-[100px] truncate" title="${record.fullOutput}">${record.output}</td>
+                    <td class="py-3 px-4 text-right">
+                        <button class="btn-load-cfg text-[10px] font-sans px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded font-semibold transition-all cursor-pointer" data-hist-idx="${index}">
+                            Cargar Config
+                        </button>
+                    </td>
+                </tr>
+            `,
+                )
+                .join("");
+
+            document.querySelectorAll(".btn-load-cfg").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    const idx = parseInt(btn.getAttribute("data-hist-idx"));
+                    const record = historyData[idx];
+                    if (record) {
+                        currentRotors = [...record.rotorIndices];
+                        rotorPositions = [...record.rotorPositions];
+                        plugboardPairs = JSON.parse(
+                            JSON.stringify(record.plugboardPairsRaw),
+                        );
+
+                        for (let i = 0; i < 3; i++) {
+                            document.getElementById(`rotor-select-${i}`).value =
+                                currentRotors[i];
+                            updateRotorScrollDisplay(i);
+                        }
+                        applyMachineConfigToPython();
+                        alert(
+                            `Configuración cargada: Rotores ${record.rotors}, Posición inicial ${record.positions}, Enchufes ${record.plugboard}`,
+                        );
+                    }
+                });
+            });
+        }
+
+        function renderFrequencyChart() {
+            const svg = document.getElementById("frequency-svg");
+            if (!svg) return;
+
+            const inputVal = document
+                .getElementById("input-text")
+                .value.toUpperCase();
+            const outputVal = document
+                .getElementById("output-text")
+                .value.toUpperCase();
+
+            const inputCounts = Array(26).fill(0);
+            const outputCounts = Array(26).fill(0);
+            let maxCount = 1; 
+
+            for (let char of inputVal) {
+                const idx = ALPHABET.indexOf(char);
+                if (idx !== -1) {
+                    inputCounts[idx]++;
+                    if (inputCounts[idx] > maxCount)
+                        maxCount = inputCounts[idx];
+                }
+            }
+
+            for (let char of outputVal) {
+                const idx = ALPHABET.indexOf(char);
+                if (idx !== -1) {
+                    outputCounts[idx]++;
+                    if (outputCounts[idx] > maxCount)
+                        maxCount = outputCounts[idx];
+                }
+            }
+
+            const width = 520;
+            const height = 180;
+            const margin = { left: 20, right: 10, top: 15, bottom: 20 };
+
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+
+            const colWidth = chartWidth / 26;
+
+            let svgContent = "";
+
+            const gridLinesCount = 4;
+            for (let i = 0; i <= gridLinesCount; i++) {
+                const yVal = margin.top + (chartHeight / gridLinesCount) * i;
+                const gridVal = Math.round(
+                    maxCount - (maxCount / gridLinesCount) * i,
+                );
+                svgContent += `
+                    <line x1="${margin.left}" y1="${yVal}" x2="${width - margin.right}" y2="${yVal}" stroke="#27272a" stroke-width="1" />
+                    <text x="${margin.left - 5}" y="${yVal + 3}" fill="#71717a" font-size="8" font-family="monospace" text-anchor="end">${gridVal}</text>
+                `;
+            }
+
+            for (let k = 0; k < 26; k++) {
+                const letter = ALPHABET[k];
+                const xBase = margin.left + k * colWidth;
+                const barW = (colWidth - 4) / 2;
+
+                const inBarH = (inputCounts[k] / maxCount) * chartHeight;
+                const outBarH = (outputCounts[k] / maxCount) * chartHeight;
+
+                const inY = margin.top + chartHeight - inBarH;
+                const outY = margin.top + chartHeight - outBarH;
+
+                svgContent += `
+                    <rect x="${xBase}" y="${inY}" width="${barW}" height="${inBarH}" fill="var(--color-primary, #ff141e)" fill-opacity="0.75" rx="1" class="transition-all duration-300" />
+                `;
+                svgContent += `
+                    <rect x="${xBase + barW + 1}" y="${outY}" width="${barW}" height="${outBarH}" fill="var(--color-accent, #4650ff)" fill-opacity="0.75" rx="1" class="transition-all duration-300" />
+                `;
+
+                svgContent += `
+                    <text x="${xBase + colWidth / 2 - 2}" y="${height + 2}" fill="#a1a1aa" font-size="9" font-family="monospace" font-weight="bold" text-anchor="middle">${letter}</text>
+                `;
+            }
+
+            svg.innerHTML = svgContent;
+        }
+
+        function renderSpeedChart() {
+            const svg = document.getElementById("speed-svg");
+            const avgIndicator = document.getElementById("avg-time-indicator");
+            if (!svg) return;
+
+            if (executionTimes.length === 0) {
+                svg.innerHTML = `
+                    <text x="250" y="100" fill="#71717a" font-size="12" font-family="sans-serif" text-anchor="middle">
+                        Escribe o presiona teclas para graficar velocidad de cifrado
+                    </text>
+                `;
+                if (avgIndicator) avgIndicator.innerText = "Promedio: 0 µs";
+                return;
+            }
+
+            const maxPoints = 60;
+            const pointsData = executionTimes.slice(-maxPoints);
+
+            const sum = pointsData.reduce((a, b) => a + b, 0);
+            const avg = Math.round(sum / pointsData.length);
+            if (avgIndicator) {
+                avgIndicator.innerText = `Promedio: ${avg} µs`;
+            }
+
+            const maxVal = Math.max(...pointsData, 100);
+            const minVal = 0;
+
+            const width = 500;
+            const height = 180;
+            const margin = { left: 35, right: 15, top: 15, bottom: 15 };
+
+            const chartWidth = width - margin.left - margin.right;
+            const chartHeight = height - margin.top - margin.bottom;
+
+            let svgContent = "";
+
+            const gridLines = 4;
+            for (let i = 0; i <= gridLines; i++) {
+                const yVal = margin.top + (chartHeight / gridLines) * i;
+                const gridVal = Math.round(
+                    maxVal - ((maxVal - minVal) / gridLines) * i,
+                );
+                svgContent += `
+                    <line x1="${margin.left}" y1="${yVal}" x2="${width - margin.right}" y2="${yVal}" stroke="#27272a" stroke-width="0.75" stroke-dasharray="2,2" />
+                    <text x="${margin.left - 6}" y="${yVal + 3}" fill="#71717a" font-size="8" font-family="monospace" text-anchor="end">${gridVal}µs</text>
+                `;
+            }
+
+            const stepX =
+                chartWidth /
+                (pointsData.length > 1 ? pointsData.length - 1 : 1);
+            let pathPoints = [];
+
+            pointsData.forEach((val, i) => {
+                const x = margin.left + i * stepX;
+                const y =
+                    margin.top +
+                    chartHeight -
+                    ((val - minVal) / (maxVal - minVal)) * chartHeight;
+                pathPoints.push(`${x},${y}`);
+
+                svgContent += `
+                    <circle cx="${x}" cy="${y}" r="2" fill="var(--color-accent, #4650ff)" opacity="0.8" />
+                `;
+            });
+
+            if (pathPoints.length > 0) {
+                svgContent += `
+                    <path d="M ${pathPoints.join(" L ")}" stroke="var(--color-accent, #4650ff)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                `;
+                const fillPath = `M ${margin.left},${margin.top + chartHeight} L ${pathPoints.join(" L ")} L ${margin.left + (pointsData.length - 1) * stepX},${margin.top + chartHeight} Z`;
+                svgContent += `
+                    <path d="${fillPath}" fill="var(--color-accent, #4650ff)" fill-opacity="0.1" stroke="none" />
+                `;
+            }
+
+            svg.innerHTML = svgContent;
+        }
+
+        document.querySelectorAll(".tab-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tab-btn").forEach((b) => {
+                    b.classList.remove("border-primary", "text-primary");
+                    b.classList.add(
+                        "border-transparent",
+                        "text-muted-foreground",
+                    );
+                });
+
+                document.querySelectorAll(".tab-content").forEach((c) => {
+                    c.classList.remove("block");
+                    c.classList.add("hidden");
+                });
+                btn.classList.add("border-primary", "text-primary");
+                btn.classList.remove(
+                    "border-transparent",
+                    "text-muted-foreground",
+                );
+
+                const targetTab = btn.getAttribute("data-tab");
+                document.getElementById(targetTab).classList.remove("hidden");
+                document.getElementById(targetTab).classList.add("block");
+
+                if (targetTab === "tab-analytics") {
+                    renderFrequencyChart();
+                    renderSpeedChart();
+                }
+            });
+        });
+
+        document.querySelectorAll(".keyboard-key").forEach((keyBtn) => {
+            keyBtn.addEventListener("click", () => {
+                const char = keyBtn.getAttribute("data-key");
+                encryptSingleChar(char);
+            });
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (
+                document.activeElement.tagName === "TEXTAREA" ||
+                document.activeElement.tagName === "INPUT"
+            ) {
+                return;
+            }
+
+            const key = e.key.toUpperCase();
+            if (key.length === 1 && ALPHABET.includes(key)) {
+                e.preventDefault();
+                const keyBtn = document.querySelector(
+                    `.keyboard-key[data-key="${key}"]`,
+                );
+                if (keyBtn) {
+                    keyBtn.classList.add("active");
+                    keyBtn.click();
+                    setTimeout(() => {
+                        keyBtn.classList.remove("active");
+                    }, 100);
+                }
+            }
+        });
+
+        document.querySelectorAll(".plugboard-socket").forEach((sock) => {
+            sock.addEventListener("click", () => {
+                const char = sock.getAttribute("data-plug");
+                handlePlugboardClick(char);
+            });
+        });
+
+        document
+            .getElementById("btn-clear-plugs")
+            .addEventListener("click", () => {
+                plugboardPairs = [];
+                activePlugSocket = null;
+                applyMachineConfigToPython();
+            });
+
+        for (let i = 0; i < 3; i++) {
+            document
+                .getElementById(`rotor-select-${i}`)
+                .addEventListener("change", (e) => {
+                    const val = parseInt(e.target.value);
+                    currentRotors[i] = val;
+
+                    const uniqueRotors = new Set(currentRotors);
+                    if (uniqueRotors.size !== 3) {
+                        alert(
+                            "Cada rotor seleccionado debe ser único. Elige tipos de rotores distintos.",
+                        );
+
+                        const options = Array.from(e.target.options);
+                        for (let opt of options) {
+                            const optVal = parseInt(opt.value);
+                            if (!currentRotors.includes(optVal)) {
+                                currentRotors[i] = optVal;
+                                e.target.value = optVal;
+                                break;
+                            }
+                        }
+                    }
+
+                    applyMachineConfigToPython();
+                });
+        }
+
+        document.querySelectorAll(".rotor-btn-prev").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const rIdx = parseInt(btn.getAttribute("data-rotor"));
+                rotorPositions[rIdx] = (rotorPositions[rIdx] - 1 + 26) % 26;
+                applyMachineConfigToPython();
+                updateRotorScrollDisplay(rIdx);
+            });
+        });
+
+        document.querySelectorAll(".rotor-btn-next").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const rIdx = parseInt(btn.getAttribute("data-rotor"));
+                rotorPositions[rIdx] = (rotorPositions[rIdx] + 1) % 26;
+                applyMachineConfigToPython();
+                updateRotorScrollDisplay(rIdx);
+            });
+        });
+
+        document.getElementById("btn-run-all").addEventListener("click", () => {
+            encryptBulkBlock();
+        });
+        document
+            .getElementById("btn-reset-rotors")
+            .addEventListener("click", () => {
+                rotorPositions = [0, 0, 0];
+                applyMachineConfigToPython();
+                for (let i = 0; i < 3; i++) {
+                    updateRotorScrollDisplay(i);
+                }
+                alert("Rotores restablecidos a la posición inicial (A-A-A).");
+            });
+
+        document.getElementById("btn-copy").addEventListener("click", () => {
+            const outTxt = document.getElementById("output-text");
+            if (outTxt.value.length === 0) {
+                alert("No hay texto para copiar.");
+                return;
+            }
+            navigator.clipboard
+                .writeText(outTxt.value)
+                .then(() => {
+                    alert("¡Cifrado copiado al portapapeles con éxito!");
+                })
+                .catch((err) => {
+                    alert("Error al copiar: " + err);
+                });
+        });
+
+        document
+            .getElementById("btn-clear-console")
+            .addEventListener("click", () => {
+                document.getElementById("input-text").value = "";
+                document.getElementById("output-text").value = "";
+                executionTimes = [];
+                renderFrequencyChart();
+                renderSpeedChart();
+            });
+
+        document
+            .getElementById("btn-clear-history")
+            .addEventListener("click", () => {
+                if (
+                    confirm(
+                        "¿Estás seguro de que quieres borrar el historial de encriptación?",
+                    )
+                ) {
+                    historyData = [];
+                    localStorage.removeItem("enigma_history");
+                    renderHistoryTable();
+                }
+            });
+
+        document.getElementById("input-text").addEventListener("input", (e) => {
+            const val = e.target.value.toUpperCase();
+            const filtered = val
+                .split("")
+                .filter((c) => ALPHABET.includes(c))
+                .join("");
+            if (val !== filtered) {
+                e.target.value = filtered;
+            }
+        });
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", () => {
+                setTimeout(initEnigma, 100);
+            });
+        } else {
+            setTimeout(initEnigma, 100);
+        }
+    </script>
+</Layout>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js" is:inline></script>

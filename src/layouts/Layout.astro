@@ -45,7 +45,7 @@ import Seo from "../components/Seo.astro";
                     message,
                 );
             };
-            window.screwdriver = window.screwdriver || {};
+            (window as any).screwdriver = window.screwdriver || {};
             window.screwdriver.log = printer;
         </script>
     </head>

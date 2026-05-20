@@ -117,10 +117,10 @@ import MainLayout from "../layouts/ToolLayout.astro";
                 palo = "bastos";
             }
             let numero = parseInt(resultado.slice(0, -2));
-            numero = parseInt(Math.sqrt(numero));
+            numero = Math.round(Math.sqrt(numero));
             objetivo.innerHTML =
                 "Tu carta es " +
-                numero +
+                numero.toString() +
                 " de " +
                 palo +
                 " y tienes " +

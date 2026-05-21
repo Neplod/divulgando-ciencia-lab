@@ -378,7 +378,7 @@ import Layout from "../layouts/ToolLayout.astro";
                 <div id="signal-trace-container" class="flex flex-col gap-3 font-mono text-xs text-muted-foreground relative">
                     <div class="absolute left-2.75 top-3 bottom-3 w-0.5 bg-zinc-800"></div>
                     <div class="flex items-center gap-4 relative z-10">
-                        <span id="trace-step-in" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <span id="trace-step-in" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold"></span>
                         <div class="flex flex-col">
                             <span class="text-[10px] text-zinc-500 font-sans">1. Entrada Teclado</span>
                             <span id="trace-label-in" class="text-foreground">-</span>
@@ -386,42 +386,42 @@ import Layout from "../layouts/ToolLayout.astro";
                     </div>
 
                     <div class="flex items-center gap-4 relative z-10">
-                        <span id="trace-step-pb1" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <span id="trace-step-pb1" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold"></span>
                         <div class="flex flex-col">
                             <span class="text-[10px] text-zinc-500 font-sans">2. Clavijero (Ida)</span>
                             <span id="trace-label-pb1" class="text-foreground">-</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 relative z-10">
-                        <span id="trace-step-rot-f" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <span id="trace-step-rot-f" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold"></span>
                         <div class="flex flex-col">
                             <span class="text-[10px] text-zinc-500 font-sans">3. Rotores (Ida: R1 → R2 → R3)</span>
                             <span id="trace-label-rot-f" class="text-foreground">-</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 relative z-10">
-                        <span id="trace-step-refl" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <span id="trace-step-refl" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold"></span>
                         <div class="flex flex-col">
                             <span class="text-[10px] text-zinc-500 font-sans">4. Reflector (Swapper)</span>
                             <span id="trace-label-refl" class="text-foreground">-</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 relative z-10">
-                        <span id="trace-step-rot-b" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <span id="trace-step-rot-b" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold"></span>
                         <div class="flex flex-col">
                             <span class="text-[10px] text-zinc-500 font-sans">5. Rotores (Vuelta: R3 → R2 → R1)</span>
                             <span id="trace-label-rot-b" class="text-foreground">-</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 relative z-10">
-                        <span id="trace-step-pb2" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <span id="trace-step-pb2" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold"></span>
                         <div class="flex flex-col">
                             <span class="text-[10px] text-zinc-500 font-sans">6. Clavijero (Vuelta)</span>
                             <span id="trace-label-pb2" class="text-foreground">-</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-4 relative z-10">
-                        <span id="trace-step-out" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold bg-white"></span>
+                        <span id="trace-step-out" class="w-6 h-6 shrink-0 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center text-zinc-500 font-bold"></span>
                         <div class="flex flex-col">
                             <span class="text-[10px] text-zinc-500 font-sans">7. Salida (Lampboard)</span>
                             <span id="trace-label-out" class="text-foreground">-</span>
@@ -569,6 +569,19 @@ import Layout from "../layouts/ToolLayout.astro";
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 items-center p-3 bg-white rounded-xl border border-zinc-900">
+                        <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mr-1">Regenerar cableado:</span>
+                        <button id="btn-regen-rotor-0" class="text-[10px] font-sans px-2.5 py-1 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-400 rounded border border-zinc-700 hover:border-amber-500/40 transition-all uppercase cursor-pointer">Rotor I</button>
+                        <button id="btn-regen-rotor-1" class="text-[10px] font-sans px-2.5 py-1 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-400 rounded border border-zinc-700 hover:border-amber-500/40 transition-all uppercase cursor-pointer">Rotor II</button>
+                        <button id="btn-regen-rotor-2" class="text-[10px] font-sans px-2.5 py-1 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-400 rounded border border-zinc-700 hover:border-amber-500/40 transition-all uppercase cursor-pointer">Rotor III</button>
+                        <button id="btn-regen-rotor-3" class="text-[10px] font-sans px-2.5 py-1 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-400 rounded border border-zinc-700 hover:border-amber-500/40 transition-all uppercase cursor-pointer">Rotor IV</button>
+                        <button id="btn-regen-rotor-4" class="text-[10px] font-sans px-2.5 py-1 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-400 rounded border border-zinc-700 hover:border-amber-500/40 transition-all uppercase cursor-pointer">Rotor V</button>
+                        <div class="w-px h-4 bg-zinc-700 mx-1"></div>
+                        <button id="btn-regen-reflector" class="text-[10px] font-sans px-2.5 py-1 bg-zinc-800 hover:bg-emerald-500/20 text-zinc-300 hover:text-emerald-400 rounded border border-zinc-700 hover:border-emerald-500/40 transition-all uppercase cursor-pointer">Reflector</button>
+                        <div class="w-px h-4 bg-zinc-700 mx-1"></div>
+                        <button id="btn-regen-all" class="text-[10px] font-sans px-2.5 py-1 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded transition-all uppercase cursor-pointer font-bold">Regenerar Todo</button>
                     </div>
                 </div>
             </div>
@@ -957,6 +970,39 @@ machine = EnigmaMachine()
             }
         }
 
+        function getCurrentWirings() {
+            if (!enigmaJS) return null;
+            const rotorWirings = [];
+            for (let i = 0; i < 5; i++) {
+                rotorWirings.push(Array.from(enigmaJS.rotors.get(i).positions.toJs()));
+            }
+            const reflectorWiring = Array.from(enigmaJS.reflector.positions.toJs());
+            return { rotorWirings, reflectorWiring };
+        }
+
+        function applyWiringsToPython(rotorWirings, reflectorWiring) {
+            if (!enigmaJS) return;
+            for (let i = 0; i < 5; i++) {
+                enigmaJS.rotors.get(i).positions = pyodide.toPy(rotorWirings[i]);
+            }
+            enigmaJS.reflector.positions = pyodide.toPy(reflectorWiring);
+            renderMachineWiringDetails();
+        }
+
+        function regenerateRotor(rotorIdx) {
+            if (!enigmaJS) return;
+            enigmaJS.rotors.get(rotorIdx).mix();
+            renderMachineWiringDetails();
+            applyMachineConfigToPython();
+        }
+
+        function regenerateReflector() {
+            if (!enigmaJS) return;
+            const newRefl = pyodide.runPython('generateRandomPairList()');
+            enigmaJS.reflector.positions = newRefl;
+            renderMachineWiringDetails();
+        }
+
         function updateConfigMappingText() {
             const pbEl = document.getElementById("cfg-plugboard");
             if (!pbEl) return;
@@ -1185,7 +1231,6 @@ machine = EnigmaMachine()
                 el.classList.remove(
                     "border-zinc-800",
                     "text-zinc-500",
-                    "bg-zinc-950",
                     "border-emerald-500",
                     "text-emerald-500",
                     "shadow-[0_0_8px_rgba(16,185,129,0.5)]",
@@ -1290,6 +1335,7 @@ machine = EnigmaMachine()
                           .join(",")
                     : "Ninguna";
 
+            const wirings = getCurrentWirings();
             const record = {
                 time: formatTime,
                 rotors: rotorsStr,
@@ -1306,6 +1352,8 @@ machine = EnigmaMachine()
                 rotorIndices: [...currentRotors],
                 rotorPositions: [...rotorPosStart],
                 plugboardPairsRaw: JSON.parse(JSON.stringify(plugboardPairs)),
+                rotorWirings: wirings ? wirings.rotorWirings : null,
+                reflectorWiring: wirings ? wirings.reflectorWiring : null,
             };
 
             historyData.unshift(record);
@@ -1371,6 +1419,10 @@ machine = EnigmaMachine()
                         plugboardPairs = JSON.parse(
                             JSON.stringify(record.plugboardPairsRaw),
                         );
+
+                        if (record.rotorWirings && record.reflectorWiring) {
+                            applyWiringsToPython(record.rotorWirings, record.reflectorWiring);
+                        }
 
                         for (let i = 0; i < 3; i++) {
                             document.getElementById(`rotor-select-${i}`).value =
@@ -1733,6 +1785,26 @@ machine = EnigmaMachine()
             if (val !== filtered) {
                 e.target.value = filtered;
             }
+        });
+
+        for (let ri = 0; ri < 5; ri++) {
+            const btn = document.getElementById(`btn-regen-rotor-${ri}`);
+            if (btn) {
+                btn.addEventListener("click", ((rotorIndex) => () => {
+                    regenerateRotor(rotorIndex);
+                })(ri));
+            }
+        }
+
+        document.getElementById("btn-regen-reflector").addEventListener("click", () => {
+            regenerateReflector();
+        });
+
+        document.getElementById("btn-regen-all").addEventListener("click", () => {
+            for (let ri = 0; ri < 5; ri++) {
+                regenerateRotor(ri);
+            }
+            regenerateReflector();
         });
 
         if (document.readyState === "loading") {

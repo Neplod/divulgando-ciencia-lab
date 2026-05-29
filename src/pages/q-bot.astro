@@ -1,12 +1,17 @@
 ---
 import MainLayout from "../layouts/ToolLayout.astro";
+import AuthorBadge from "../components/AuthorBadge.astro";
 ---
 
-<MainLayout title="Q-Bot" class="flex">
-    <main>
+<MainLayout title="Q-Bot" class="flex flex-col items-center">
+    <main class="w-full flex flex-col items-center">
         <img
             class="justify-center mx-auto mt-28 w-48 lg:w-64"
             src="/images/q-bot/cubo.webp"
+        />
+        <AuthorBadge 
+            authorName="@Neplod" 
+            githubUser="@Neplod" 
         />
         <div class="w-full my-12">
             <div

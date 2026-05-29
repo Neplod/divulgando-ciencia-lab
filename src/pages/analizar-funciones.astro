@@ -1,5 +1,6 @@
 ---
 import MainLayout from "../layouts/ToolLayout.astro";
+import AuthorBadge from "../components/AuthorBadge.astro";
 ---
 
 <MainLayout title="Analizar Funciones Cuadráticas" class="flex px-20">
@@ -7,11 +8,17 @@ import MainLayout from "../layouts/ToolLayout.astro";
         class="flex-col flex gap-x-6 lg:flex-row gap-y-4 md:gap-y-6 mt-8 px-20"
     >
         <section
-            class="w-full h-auto bg-card text-card-foreground border shadow-sm px-6 py-4 md:px-12 md:py-8 rounded-lg"
+            class="w-full h-auto bg-card text-card-foreground border shadow-sm px-6 py-4 md:px-12 md:py-8 rounded-lg flex flex-col justify-center items-start"
         >
-            <h1 class="text-2xl md:text-4xl font-semibold">
+            <h1 class="text-2xl md:text-4xl font-semibold mb-2">
                 Analizador de funciones cuadráticas
             </h1>
+            <div class="w-full flex justify-start ml-0 -mt-2">
+                <AuthorBadge 
+                    authorName="@dotero_dciencia" 
+                    githubUser="@dotero_dciencia" 
+                />
+            </div>
         </section>
         <section
             class="px-6 py-4 md:px-12 md:py-8 bg-card text-card-foreground border shadow-sm rounded-lg w-full"
@@ -360,7 +367,7 @@ import MainLayout from "../layouts/ToolLayout.astro";
                 ],
             });
         } catch (err) {
-            alert(err);
+            console.log(err);
         }
     }
 

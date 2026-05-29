@@ -1,20 +1,25 @@
 ---
 import Layout from "../layouts/ToolLayout.astro";
+import AuthorBadge from "../components/AuthorBadge.astro";
 ---
 
 <Layout title="Consola Python">
     <div class="min-h-screen py-12 px-4">
         <div class="container mx-auto max-w-7xl">
             <!-- Header -->
-            <div class="text-center mb-8 animate-fade-in">
+            <div class="text-center mb-8 animate-fade-in flex flex-col items-center">
                 <h1
                     class="text-5xl md:text-6xl font-black text-foreground mb-4"
                 >
                     Consola <span class="text-primary">Python</span>
                 </h1>
-                <p class="text-xl text-foreground/80">
+                <p class="text-xl text-foreground/80 mb-2">
                     Ejecuta código Python directamente en tu navegador
                 </p>
+                <AuthorBadge 
+                    authorName="@Neplod" 
+                    githubUser="@Neplod" 
+                />
             </div>
 
             <!-- Console Container -->

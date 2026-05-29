@@ -1,12 +1,17 @@
 ---
 import MainLayout from "../layouts/ToolLayout.astro";
+import AuthorBadge from "../components/AuthorBadge.astro";
 ---
 
-<MainLayout title="Adivino tu Carta" class="flex">
-    <main>
+<MainLayout title="Adivino tu Carta" class="flex flex-col items-center">
+    <main class="w-full flex flex-col items-center">
         <img
             class="justify-center mx-auto mt-28 w-48 lg:w-64 rounded-md"
             src="/images/adivino-tu-carta/carta.webp"
+        />
+        <AuthorBadge 
+            authorName="@dotero_dciencia" 
+            githubUser="@dotero_dciencia"
         />
         <div class="w-full mt-12 mb-6">
             <div

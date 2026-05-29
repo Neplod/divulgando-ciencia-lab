@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/ToolLayout.astro";
+import AuthorBadge from "../components/AuthorBadge.astro";
 ---
 
 <Layout title="Máquina Enigma" description="Simulador interactivo de la Máquina Enigma de la Segunda Guerra Mundial. Configura rotores, tablero de conexiones, visualiza la ruta de la señal y analiza frecuencias y tiempos en tiempo real.">
@@ -103,7 +104,7 @@ import Layout from "../layouts/ToolLayout.astro";
         </p>
     </div>
 
-    <section class="mt-6 w-full justify-center text-center m-auto px-4 sm:px-8 text-foreground">
+    <section class="mt-6 w-full justify-center text-center m-auto px-4 sm:px-8 text-foreground flex flex-col items-center">
         <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20 mb-3">
             <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
             <span class="text-xs font-semibold text-primary uppercase tracking-wider">Criptografía Histórica</span>
@@ -115,6 +116,12 @@ import Layout from "../layouts/ToolLayout.astro";
             conexiones, escribe mensajes y analiza la señal eléctrica paso a
             paso.
         </p>
+        <AuthorBadge 
+            authorName="@Neplod" 
+            githubUser="@Neplod" 
+            repoUrl="https://github.com/Neplod/enigma-machine"
+            isOriginalProject={true}
+        />
     </section>
 
     <main id="enigma-dashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 opacity-0 transition-opacity duration-700 pointer-events-none grid grid-cols-1 lg:grid-cols-12 gap-8">
